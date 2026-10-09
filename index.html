@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#EDF1F0">
+<meta name="color-scheme" content="light dark">
+<title>Comparador de hipotecas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Layout: una sola columna estrecha pensada para el móvil; tarjetas de oferta plegables arriba, comparativa y gráficos debajo. */
+:root{
+  --bg:#EDF1F0; --surface:#FCFCFB; --field:#F5F7F6;
+  --ink:#172022; --ink2:#4A5557; --muted:#788385;
+  --line:#DCE2E0; --grid:#E4E8E6; --axis:#C5CCCA;
+  --accent:#1E4D45; --accent-ink:#FFFFFF; --accent-weak:#E1ECE9;
+  --good:#0ca30c; --bad:#d03b3b;
+  --tip-bg:#172022; --tip-ink:#F2F5F4;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0F1313; --surface:#1A1A19; --field:#222423;
+    --ink:#EEF2F1; --ink2:#B4BDBC; --muted:#8A9391;
+    --line:#2D3231; --grid:#2C2C2A; --axis:#383835;
+    --accent:#8FD0C0; --accent-ink:#0F1F1B; --accent-weak:#1F2D2A;
+    --tip-bg:#EEF2F1; --tip-ink:#172022;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0F1313; --surface:#1A1A19; --field:#222423;
+  --ink:#EEF2F1; --ink2:#B4BDBC; --muted:#8A9391;
+  --line:#2D3231; --grid:#2C2C2A; --axis:#383835;
+  --accent:#8FD0C0; --accent-ink:#0F1F1B; --accent-weak:#1F2D2A;
+  --tip-bg:#EEF2F1; --tip-ink:#172022;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 "Roboto",system-ui,-apple-system,"Segoe UI",sans-serif; padding-inline:16px; padding-block:0; -webkit-font-smoothing:antialiased}
+.wrap{max-width:920px; margin-inline:auto; padding-block:24px 72px; display:grid; gap:30px}
+h1{font-size:23px; line-height:1.2; font-weight:500; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
+h2{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.1em; color:var(--ink2); margin:0}
+h3{font-size:15px; font-weight:500; margin:0}
+p{margin:0}
+.sub{color:var(--ink2); font-size:14.5px; max-width:60ch}
+.sec-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap}
+section > h2{margin-bottom:12px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px; min-width:0}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.note{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:var(--accent-weak); border-radius:8px; padding:12px 16px; font-size:14px}
+.note p{flex:1 1 280px; min-width:0}
+
+/* campos */
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px}
+.grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px}
+.field{display:grid; gap:5px; min-width:0}
+.lbl{font-size:12.5px; color:var(--ink2)}
+.inp{display:flex; align-items:center; min-width:0; border:1px solid var(--line); border-radius:6px; background:var(--field)}
+.inp:focus-within{outline:2px solid var(--accent); outline-offset:1px}
+.inp input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:inherit; font-size:16px; padding:9px 10px; border-radius:6px}
+.inp input:focus{outline:none}
+.inp .unit{padding-right:10px; color:var(--muted); font-size:13px; white-space:nowrap}
+input[type=number]{-moz-appearance:textfield; appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
+.hint{font-size:12.5px; color:var(--ink2); line-height:1.45}
+.hint[data-state="warn"]{color:var(--bad)}
+.chips{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.chip{font-size:13px; padding:5px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.chips .cl{font-size:12.5px; color:var(--ink2); margin-right:2px}
+
+.btn{font-size:14px; font-weight:500; padding:9px 14px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.btn.danger[data-armed="1"]{border-color:var(--bad); color:var(--bad)}
+.link{background:none; border:0; padding:0; color:var(--accent); font-size:13px; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+
+/* ofertas */
+.offers{display:grid; gap:12px}
+.offer{background:var(--surface); border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.offer-head{display:flex; align-items:center; gap:12px; width:100%; padding:14px 16px; background:none; border:0; text-align:left; color:inherit; font-size:15px; cursor:pointer}
+.sw{width:12px; height:12px; border-radius:3px; flex:none}
+.sw.sm{width:10px; height:10px}
+.oh-main{flex:1; min-width:0}
+.oh-name{display:block; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.oh-meta{display:block; font-size:12.5px; color:var(--ink2)}
+.oh-nums{display:flex; gap:20px}
+.oh-num .k{display:block; font-size:11.5px; color:var(--muted)}
+.oh-num .v{display:block; font-size:14px; font-weight:500; white-space:nowrap}
+.chev{color:var(--muted); font-size:12px; transition:transform .15s}
+.offer-head[aria-expanded="true"] .chev{transform:rotate(90deg)}
+@media (max-width:600px){
+  .offer-head{flex-wrap:wrap}
+  .oh-nums{order:3; flex-basis:100%; padding-left:24px}
+}
+.offer-body{border-top:1px solid var(--line); padding:16px; display:grid; gap:22px}
+.bh{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.09em; color:var(--ink2); margin:0 0 4px}
+.bsec{display:grid; gap:12px}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--field); max-width:100%}
+.seg button{flex:1; padding:8px 18px; border:0; background:transparent; color:var(--ink2); font-size:14px; cursor:pointer}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); font-weight:500}
+.vlist{display:grid; gap:10px}
+.vrow{border:1px solid var(--line); border-radius:6px; padding:10px; display:grid; gap:10px}
+.vtop{display:flex; align-items:center; gap:10px}
+.vtop .inp{flex:1}
+.vcb{width:20px; height:20px; accent-color:var(--accent); flex:none}
+.x{width:32px; height:32px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--ink2); font-size:18px; line-height:1; cursor:pointer; flex:none}
+.vr{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; font-size:13px; color:var(--ink2)}
+.vr-ico{width:16px; height:16px; border-radius:50%; display:inline-grid; place-items:center; color:#fff; font-size:10px; line-height:1; align-self:center; background:var(--muted)}
+.vr[data-verdict="good"] .vr-ico{background:var(--good)}
+.vr[data-verdict="good"] .vr-ico::before{content:"\2713"}
+.vr[data-verdict="bad"] .vr-ico{background:var(--bad)}
+.vr[data-verdict="bad"] .vr-ico::before{content:"\2715"}
+.vr[data-verdict="neutral"] .vr-ico::before{content:"\2013"}
+.vr-label{font-weight:500; color:var(--ink)}
+.offer-actions{display:flex; gap:10px; flex-wrap:wrap; padding-top:4px; border-top:1px solid var(--line); padding-top:14px}
+
+/* resultados */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:12px}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px 16px; min-width:0}
+.tile .k{font-size:12.5px; color:var(--ink2)}
+.tile .v{font-size:26px; font-weight:500; line-height:1.25; margin-top:2px; overflow-wrap:anywhere}
+.tile .s{display:flex; align-items:center; gap:8px; margin-top:4px; font-size:13px; color:var(--ink2); min-width:0}
+.tile .s span:last-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.scrollx{overflow-x:auto; padding:0}
+table.cmp{border-collapse:separate; border-spacing:0; width:100%; min-width:100%; font-size:14px}
+table.cmp th,table.cmp td{padding:9px 14px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; background:var(--surface)}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left; position:sticky; left:0; z-index:1; min-width:150px}
+table.cmp thead th{font-weight:500; vertical-align:bottom}
+table.cmp thead th .hn{display:flex; align-items:center; gap:8px; justify-content:flex-end; max-width:190px; margin-left:auto}
+table.cmp thead th .hn span:last-child{overflow:hidden; text-overflow:ellipsis}
+table.cmp tr.grp th{font-size:11.5px; font-weight:500; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); text-align:left; padding-top:16px; border-bottom:1px solid var(--line)}
+table.cmp tr.strong td,table.cmp tr.strong th{font-weight:700}
+table.cmp td.best{background:var(--accent-weak); font-weight:700}
+table.cmp td.lbl-c{color:var(--ink2); font-weight:400}
+table.cmp tr:last-child td{border-bottom:0}
+.badge{display:inline-block; font-size:11px; font-weight:500; padding:2px 8px; border-radius:999px; background:var(--accent-weak); color:var(--ink); margin-top:6px}
+.empty{color:var(--ink2); font-size:14px; padding:12px 16px}
+.actions-row{display:flex; justify-content:flex-end; margin-top:12px}
+
+/* gráficos */
+.charts{display:grid; gap:12px}
+.chart-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:4px}
+.chart-sub{font-size:13px; color:var(--ink2); margin-bottom:12px}
+.legend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:var(--ink2); margin-bottom:10px}
+.legend-item{display:inline-flex; align-items:center}
+.lk{display:inline-block; width:16px; height:2px; border-radius:1px; margin-right:7px}
+.barrow{display:grid; gap:4px; padding:8px 4px; border-radius:6px}
+.br-name{display:flex; align-items:center; gap:8px; font-size:13.5px; min-width:0}
+.br-name .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.br-name .dlt{margin-left:auto; font-size:12.5px; color:var(--muted); white-space:nowrap}
+.track{display:flex; align-items:center; gap:10px}
+.bar{height:18px; border-radius:0 4px 4px 0; min-width:2px; transition:filter .12s}
+.barrow:hover .bar,.barrow:focus-visible .bar{filter:brightness(1.1)}
+.val{font-size:14px; font-weight:500; white-space:nowrap}
+.chart-svg{display:block; max-width:100%; touch-action:pan-y}
+.chart-svg text{fill:var(--muted); font-size:11px; font-family:inherit}
+.chart-svg .lastlbl{fill:var(--ink); font-size:12px; font-weight:500}
+table.mini{border-collapse:collapse; width:100%; font-size:13.5px}
+table.mini th,table.mini td{padding:7px 10px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums}
+table.mini th:first-child,table.mini td:first-child{text-align:left}
+table.mini thead th{font-weight:500; color:var(--ink2)}
+.tbl-wrap{overflow-x:auto}
+
+.tip{position:fixed; z-index:50; background:var(--tip-bg); color:var(--tip-ink); padding:8px 11px; border-radius:6px; font-size:12.5px; pointer-events:none; max-width:270px; box-shadow:0 4px 16px rgba(0,0,0,.25); left:0; top:0}
+.tip .t{font-weight:500; margin-bottom:4px; overflow-wrap:anywhere}
+.tip .r{display:flex; align-items:center; gap:8px}
+.tip .kline{width:12px; height:2px; flex:none}
+.tip .rv{font-weight:700; white-space:nowrap}
+.tip .rn{opacity:.8; overflow-wrap:anywhere}
+.toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(18px + env(safe-area-inset-bottom,0px)); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:999px; font-size:13.5px; z-index:60; max-width:calc(100% - 32px)}
+.notes{display:grid; gap:6px; font-size:13px; color:var(--ink2)}
+.notes ul{margin:0; padding-left:18px; display:grid; gap:4px}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+#gate{position:fixed; inset:0; z-index:100; background:var(--bg); display:grid; place-items:center; padding:16px}
+#gateBox{width:100%; max-width:320px; text-align:center}
+#gateBox h2{font-size:19px; font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink); margin:0 0 4px}
+#gateBox p{font-size:13.5px; color:var(--ink2); margin:0 0 18px}
+#gateInput{width:100%; font:inherit; font-size:24px; letter-spacing:.5em; text-align:center; padding:12px 8px 12px 20px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); margin-bottom:12px}
+#gateBtn{width:100%; font:inherit; font-size:15px; font-weight:500; padding:12px; border:0; border-radius:8px; background:var(--accent); color:var(--accent-ink); cursor:pointer}
+#gateError{color:var(--bad); font-size:13px; margin:12px 0 0}
+</style>
+
+</head>
+<body>
+<div id="gate">
+  <div id="gateBox">
+    <h2>Comparador de hipotecas</h2>
+    <p>Introduce el código de acceso de 6 dígitos.</p>
+    <input id="gateInput" type="tel" inputmode="numeric" maxlength="6" placeholder="······" autocomplete="off" aria-label="Código de acceso">
+    <button type="button" id="gateBtn">Entrar</button>
+    <p id="gateError" role="alert" hidden>Código incorrecto. Inténtalo de nuevo.</p>
+  </div>
+</div>
+<div id="app" hidden>
+<div class="wrap">
+  <header>
+    <h1>Comparador de hipotecas</h1>
+    <p class="sub">Compara cuánto te cuesta de verdad cada oferta: intereses, bonificaciones, vinculaciones, comisiones y gastos, durante todo el plazo.</p>
+  </header>
+
+  <div class="note" id="exampleNote" hidden>
+    <p>Las ofertas marcadas como «ejemplo» y los importes son datos de muestra. Sustitúyelos por los tuyos.</p>
+    <button type="button" class="btn" id="clearExamples">Empezar con mis datos</button>
+  </div>
+
+  <section aria-labelledby="h-compra">
+    <h2 id="h-compra">Tu compra</h2>
+    <div class="card" style="display:grid; gap:16px;">
+      <div class="grid3">
+        <label class="field"><span class="lbl">Precio de la vivienda</span><span class="inp"><input id="precio" type="number" inputmode="decimal" step="any" min="0"><span class="unit">€</span></span></label>
+        <label class="field"><span class="lbl">Importe a financiar</span><span class="inp"><input id="financiar" type="number" inputmode="decimal" step="any" min="0"><span class="unit">€</span></span></label>
+        <label class="field"><span class="lbl">Euríbor (valor exacto, p. ej. 2,534)</span><span class="inp"><input id="euribor" type="text" inputmode="decimal" autocomplete="off" placeholder="2,534"><span class="unit">%</span></span></label>
+      </div>
+      <p class="hint" id="ltvHint"></p>
+      <p class="hint">Escribe el valor real del Euríbor a 12 meses con todos los decimales; se usa tal cual en el cálculo. Los botones son solo escenarios rápidos.</p>
+      <div class="chips" id="euriChips" role="group" aria-label="Escenarios de Euríbor">
+        <span class="cl">Probar Euríbor:</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ofertas">
+    <div class="sec-head">
+      <h2 id="h-ofertas">Ofertas</h2>
+      <button type="button" class="btn primary" id="addOffer">+ Añadir oferta</button>
+    </div>
+    <div class="offers" id="offers"></div>
+  </section>
+
+  <section aria-labelledby="h-comp">
+    <h2 id="h-comp">Comparativa</h2>
+    <div class="tiles" id="tiles"></div>
+    <div class="card scrollx" id="cmpCard"><table class="cmp" id="cmp"></table></div>
+    <div class="actions-row"><button type="button" class="btn" id="copyBtn">Copiar resumen</button></div>
+  </section>
+
+  <section aria-labelledby="h-graf">
+    <h2 id="h-graf">Gráficos</h2>
+    <div class="charts">
+      <div class="card">
+        <div class="chart-head"><h3>Coste total por oferta</h3><button type="button" class="link" data-toggle="A" aria-pressed="false">Ver tabla</button></div>
+        <p class="chart-sub">Intereses, vinculaciones, comisiones y gastos sumados. Sin contar el capital que devuelves.</p>
+        <div id="chartA-body"></div>
+      </div>
+      <div class="card">
+        <div class="chart-head"><h3>Coste acumulado en el tiempo</h3><button type="button" class="link" data-toggle="B" aria-pressed="false">Ver tabla</button></div>
+        <p class="chart-sub">Lo que has pagado de más sobre el capital en cada año desde la firma. Donde se cruzan dos líneas, cambia la oferta más barata.</p>
+        <div class="legend" id="chartB-legend"></div>
+        <div id="chartB-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="notes" aria-labelledby="h-sup">
+    <h2 id="h-sup">Cómo se calcula</h2>
+    <ul>
+      <li>Cuota de amortización francesa. El Euríbor se mantiene constante todo el plazo; cámbialo arriba para ver otros escenarios.</li>
+      <li>La bonificación de cada vinculación activa resta puntos al TIN durante todo el plazo, en el tramo fijo y en el variable.</li>
+      <li>Las vinculaciones se pagan cada año al mismo importe, sin subidas. Anota solo el sobrecoste frente a lo que ya pagarías.</li>
+      <li>TAE real: tasa que iguala el capital recibido, menos los gastos iniciales, con todos los pagos mensuales y el coste de las vinculaciones.</li>
+      <li>Es una herramienta de comparación. La FEIN y la oferta vinculante de cada banco son las que mandan.</li>
+    </ul>
+    <p><button type="button" class="link" id="resetExamples">Volver a los datos de ejemplo</button></p>
+  </section>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+/* CALC-START */
+function num(x){ var n = parseFloat(String(x).replace(',', '.')); return isFinite(n) ? n : 0; }
+
+function pmt(P, rate, n){
+  if(n <= 0) return 0;
+  var i = rate / 1200;
+  if(i === 0) return P / n;
+  return P * i / (1 - Math.pow(1 + i, -n));
+}
+
+function bonusSum(o, skipId){
+  var s = 0;
+  for(var k = 0; k < o.vinc.length; k++){
+    var v = o.vinc[k];
+    if(v.on && v.id !== skipId) s += num(v.bonus);
+  }
+  return s;
+}
+
+function phasesFor(o, euribor, bonus){
+  var n = Math.max(1, Math.round(num(o.years) * 12));
+  function rate(r){ return Math.max(0, r - bonus); }
+  if(o.tipo === 'fija') return {n: n, phases: [{months: n, rate: rate(num(o.tinFijo))}]};
+  if(o.tipo === 'variable') return {n: n, phases: [{months: n, rate: rate(euribor + num(o.dif))}]};
+  var f = Math.min(n, Math.max(0, Math.round(num(o.anosFijo) * 12)));
+  var ph = [];
+  if(f > 0) ph.push({months: f, rate: rate(num(o.tinFijo))});
+  if(n - f > 0) ph.push({months: n - f, rate: rate(euribor + num(o.dif))});
+  return {n: n, phases: ph};
+}
+
+function amortize(cap, phases, n){
+  var bal = cap, m = 0, totalInt = 0;
+  var pay = new Float64Array(n), int = new Float64Array(n);
+  for(var p = 0; p < phases.length; p++){
+    var ph = phases[p];
+    var c = pmt(bal, ph.rate, n - m);
+    for(var k = 0; k < ph.months; k++){
+      var i = bal * ph.rate / 1200;
+      bal -= (c - i);
+      pay[m] = c; int[m] = i; totalInt += i; m++;
+    }
+  }
+  return {pay: pay, int: int, totalInt: totalInt};
+}
+
+function annualFromFlows(net0, pay, n, extra){
+  if(!(net0 > 0)) return NaN;
+  function f(i){
+    var d = 1 / (1 + i), df = 1, s = 0;
+    for(var t = 0; t < n; t++){ df *= d; s += (pay[t] + extra) * df; }
+    return net0 - s;
+  }
+  if(f(0) >= 0) return 0;
+  var lo = 0, hi = 0.01, g = 0;
+  while(f(hi) < 0 && g < 40){ hi *= 2; g++; }
+  if(f(hi) < 0) return NaN;
+  for(var k = 0; k < 80; k++){
+    var mid = (lo + hi) / 2;
+    if(f(mid) < 0) lo = mid; else hi = mid;
+  }
+  return (Math.pow(1 + (lo + hi) / 2, 12) - 1) * 100;
+}
+
+function evaluate(o, g){
+  var cap = g.financiar, euribor = g.euribor;
+  if(!(cap > 0) || !(num(o.years) > 0)) return null;
+  var bonusAll = bonusSum(o);
+  var rt = phasesFor(o, euribor, bonusAll);
+  var n = rt.n;
+  var sched = amortize(cap, rt.phases, n);
+  var noBonus = amortize(cap, phasesFor(o, euribor, 0).phases, n);
+  var vincAnnual = 0;
+  for(var k = 0; k < o.vinc.length; k++) if(o.vinc[k].on) vincAnnual += num(o.vinc[k].coste);
+  var vincTotal = vincAnnual * n / 12;
+  var apertura = cap * num(o.apertura) / 100 + num(o.otros);
+  var formal = 0;
+  for(var key in o.g) formal += num(o.g[key]);
+  var upfront = apertura + formal;
+  var costeTotal = sched.totalInt + vincTotal + upfront;
+  var vincDetail = o.vinc.map(function(v){
+    var bo = bonusSum(o, v.id);
+    var i0 = amortize(cap, phasesFor(o, euribor, bo).phases, n).totalInt;
+    var i1 = amortize(cap, phasesFor(o, euribor, bo + num(v.bonus)).phases, n).totalInt;
+    var saving = i0 - i1, cost = num(v.coste) * n / 12;
+    return {id: v.id, saving: saving, cost: cost, net: saving - cost};
+  });
+  var cum = new Float64Array(n + 1);
+  cum[0] = upfront;
+  for(var t = 0; t < n; t++) cum[t + 1] = cum[t] + sched.int[t] + vincAnnual / 12;
+  var ph = rt.phases;
+  var cap0 = cap - (cap * num(o.apertura) / 100);
+  return {
+    o: o, n: n,
+    tin0: ph[0].rate, tin1: ph.length > 1 ? ph[1].rate : null,
+    cuota0: sched.pay[0], cuota1: ph.length > 1 ? sched.pay[ph[0].months] : null,
+    interest: sched.totalInt, vincTotal: vincTotal, aperturaTotal: apertura, formal: formal,
+    upfront: upfront, costeTotal: costeTotal, totalPagar: cap + costeTotal,
+    taePrestamo: annualFromFlows(cap0, sched.pay, n, 0),
+    taeReal: annualFromFlows(cap - upfront, sched.pay, n, vincAnnual / 12),
+    saved: noBonus.totalInt - sched.totalInt,
+    vincNet: (noBonus.totalInt - sched.totalInt) - vincTotal,
+    vincDetail: vincDetail, cum: cum
+  };
+}
+/* CALC-END */
+
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var KEY = 'comparador-hipotecas-v1';
+var TIPOS = {fija:'Fija', variable:'Variable', mixta:'Mixta'};
+var PRESETS = ['Nómina','Seguro de hogar','Seguro de vida','Tarjeta','Plan de pensiones','Otra'];
+var MINUS = '−', NB = ' ';
+var GDEF = {tasacion:0, notaria:0, registro:0, gestoria:0, ajd:0};
+var uid = 0;
+function nid(p){ uid++; return p + uid.toString(36) + Math.random().toString(36).slice(2,6); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function attr(v){ return (v === undefined || v === null || (typeof v === 'number' && !isFinite(v))) ? '' : String(v); }
+
+var nf0 = new Intl.NumberFormat('es-ES', {maximumFractionDigits:0, useGrouping:'always'});
+var nf2 = new Intl.NumberFormat('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2, useGrouping:'always'});
+var nfp = new Intl.NumberFormat('es-ES', {minimumFractionDigits:2, maximumFractionDigits:3});
+function eur0(n){ return isFinite(n) ? nf0.format(Math.round(n)) + NB + '€' : '—'; }
+function eur2(n){ return isFinite(n) ? nf2.format(n) + NB + '€' : '—'; }
+function pct(n){ return isFinite(n) ? nfp.format(n) + NB + '%' : '—'; }
+function signed(n){ return (n >= 0 ? '+' : MINUS) + eur0(Math.abs(n)); }
+
+/* ---------- estado ---------- */
+function newVinc(name, bonus, coste){ return {id: nid('v'), name: name, bonus: bonus, coste: coste, on: true}; }
+function newOffer(slot, name){
+  return {id: nid('o'), slot: slot, name: name, tipo: 'fija', years: 25, tinFijo: 3, anosFijo: 10, dif: 0.8,
+          vinc: [], apertura: 0, otros: 0, amortPct: 0, g: Object.assign({}, GDEF), open: true, ex: false};
+}
+function exampleState(){
+  var a = newOffer(0, 'Oferta A (ejemplo)');
+  a.tipo = 'fija'; a.years = 25; a.tinFijo = 3.1; a.ex = true;
+  a.vinc = [newVinc('Nómina', 0.30, 0), newVinc('Seguro de hogar', 0.20, 180), newVinc('Seguro de vida', 0.25, 260)];
+  a.g.tasacion = 400;
+  var b = newOffer(1, 'Oferta B (ejemplo)');
+  b.tipo = 'variable'; b.years = 25; b.dif = 0.89; b.apertura = 0.25; b.ex = true; b.open = false;
+  b.vinc = [newVinc('Nómina', 0.15, 0), newVinc('Seguro de hogar', 0.10, 180)];
+  b.g.tasacion = 400;
+  var c = newOffer(2, 'Oferta C (ejemplo)');
+  c.tipo = 'mixta'; c.years = 30; c.tinFijo = 2.45; c.anosFijo = 10; c.dif = 0.99; c.ex = true; c.open = false;
+  c.vinc = [newVinc('Nómina', 0.20, 0), newVinc('Seguro de vida', 0.30, 300), newVinc('Plan de pensiones', 0.10, 300)];
+  c.g.tasacion = 400;
+  return {precio: 300000, financiar: 240000, euribor: 2.5, offers: [a, b, c]};
+}
+function sanitize(s){
+  var out = {precio: num(s.precio), financiar: num(s.financiar), euribor: isFinite(parseFloat(s.euribor)) ? num(s.euribor) : 2.5, offers: []};
+  (s.offers || []).slice(0, 8).forEach(function(o, i){
+    var m = Object.assign(newOffer(i, 'Oferta'), o);
+    m.g = Object.assign({}, GDEF, o.g || {});
+    m.vinc = (o.vinc || []).map(function(v){ return Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true}, v); });
+    m.slot = (Number.isInteger(o.slot) && o.slot >= 0 && o.slot < 8) ? o.slot : i;
+    if(!TIPOS[m.tipo]) m.tipo = 'fija';
+    out.offers.push(m);
+  });
+  return out;
+}
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(raw){ var s = JSON.parse(raw); if(s && Array.isArray(s.offers)) return sanitize(s); }
+  }catch(e){}
+  return null;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+var state = load() || sanitize(exampleState());
+var results = {};
+var view = {A: false, B: false};
+
+function findOffer(id){ for(var i = 0; i < state.offers.length; i++) if(state.offers[i].id === id) return state.offers[i]; return null; }
+function validResults(){ return state.offers.map(function(o){ return results[o.id]; }).filter(Boolean); }
+function colorOf(o){ return 'var(--s' + (o.slot + 1) + ')'; }
+function nameOf(o){ return o.name && o.name.trim() ? o.name : 'Oferta sin nombre'; }
+
+/* ---------- ofertas: marcado ---------- */
+function numField(o, f, label, unit){
+  return '<label class="field"><span class="lbl">' + label + '</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(o[f]) + '" data-oid="' + o.id + '" data-f="' + f + '">' + (unit ? '<span class="unit">' + unit + '</span>' : '') + '</span></label>';
+}
+function gField(o, f, label){
+  return '<label class="field"><span class="lbl">' + label + '</span><span class="inp"><input type="number" inputmode="decimal" step="any" min="0" value="' + attr(o.g[f]) + '" data-oid="' + o.id + '" data-gf="' + f + '"><span class="unit">€</span></span></label>';
+}
+function vincRowHtml(o, v){
+  var base = ' data-oid="' + o.id + '" data-vid="' + v.id + '"';
+  return '<div class="vrow" data-vrow="' + v.id + '">' +
+    '<div class="vtop">' +
+      '<input type="checkbox" class="vcb" aria-label="Incluir esta vinculación"' + (v.on ? ' checked' : '') + base + ' data-vf="on">' +
+      '<span class="inp"><input type="text" aria-label="Nombre de la vinculación" value="' + esc(v.name) + '"' + base + ' data-vf="name"></span>' +
+      '<button type="button" class="x" data-act="delvinc"' + base + ' aria-label="Quitar vinculación">×</button>' +
+    '</div>' +
+    '<div class="grid2">' +
+      '<label class="field"><span class="lbl">Baja el TIN en</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.bonus) + '"' + base + ' data-vf="bonus"><span class="unit">puntos</span></span></label>' +
+      '<label class="field"><span class="lbl">Sobrecoste al año</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.coste) + '"' + base + ' data-vf="coste"><span class="unit">€</span></span></label>' +
+    '</div>' +
+    '<div class="vr" id="vr-' + v.id + '" data-verdict="neutral"><span class="vr-ico" aria-hidden="true"></span><span class="vr-label"></span><span class="vr-text"></span></div>' +
+  '</div>';
+}
+function vincListHtml(o){ return o.vinc.map(function(v){ return vincRowHtml(o, v); }).join(''); }
+function offerHtml(o){
+  var id = o.id;
+  var chips = PRESETS.map(function(p){ return '<button type="button" class="chip" data-act="addvinc" data-oid="' + id + '" data-name="' + esc(p) + '">+ ' + esc(p) + '</button>'; }).join('');
+  return '<article class="offer" data-offer="' + id + '">' +
+    '<button type="button" class="offer-head" data-act="toggle" data-oid="' + id + '" aria-expanded="' + (o.open ? 'true' : 'false') + '" aria-controls="ob-' + id + '">' +
+      '<span class="sw" style="background:' + colorOf(o) + '"></span>' +
+      '<span class="oh-main"><span class="oh-name" id="hn-' + id + '"></span><span class="oh-meta" id="hm-' + id + '"></span></span>' +
+      '<span class="oh-nums"><span class="oh-num"><span class="k">Cuota inicial</span><span class="v" id="hc-' + id + '"></span></span><span class="oh-num"><span class="k">Coste total</span><span class="v" id="ht-' + id + '"></span></span></span>' +
+      '<span class="chev" aria-hidden="true">▶</span>' +
+    '</button>' +
+    '<div class="offer-body" id="ob-' + id + '"' + (o.open ? '' : ' hidden') + '>' +
+      '<div class="bsec">' +
+        '<h4 class="bh">Nombre y tipo de interés</h4>' +
+        '<label class="field"><span class="lbl">Nombre de la oferta</span><span class="inp"><input type="text" value="' + esc(o.name) + '" data-oid="' + id + '" data-f="name"></span></label>' +
+        '<div class="seg" role="group" aria-label="Tipo de interés">' +
+          ['fija','variable','mixta'].map(function(t){ return '<button type="button" data-act="tipo" data-oid="' + id + '" data-v="' + t + '" aria-pressed="' + (o.tipo === t) + '">' + TIPOS[t] + '</button>'; }).join('') +
+        '</div>' +
+        '<div class="grid2">' +
+          '<span data-for="fija mixta" style="display:contents">' + numField(o, 'tinFijo', '<span data-lbl="tinFijo">TIN sin bonificar</span>', '%') + '</span>' +
+          '<span data-for="mixta" style="display:contents">' + numField(o, 'anosFijo', 'Años de tramo fijo', 'años') + '</span>' +
+          '<span data-for="variable mixta" style="display:contents">' + numField(o, 'dif', 'Diferencial sobre Euríbor', 'puntos') + '</span>' +
+          numField(o, 'years', 'Plazo', 'años') +
+        '</div>' +
+        '<p class="hint" data-for="variable mixta" id="vh-' + id + '"></p>' +
+      '</div>' +
+      '<div class="bsec">' +
+        '<h4 class="bh">Vinculaciones</h4>' +
+        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías (por ejemplo, la diferencia de prima de un seguro). Desmarca las que no vayas a contratar.</p>' +
+        '<div class="vlist" id="vl-' + id + '">' + vincListHtml(o) + '</div>' +
+        '<div class="chips">' + chips + '</div>' +
+      '</div>' +
+      '<div class="bsec">' +
+        '<h4 class="bh">Comisiones del banco</h4>' +
+        '<div class="grid2">' +
+          numField(o, 'apertura', 'Comisión de apertura', '%') +
+          numField(o, 'otros', 'Otras comisiones o gastos', '€') +
+          numField(o, 'amortPct', 'Amortización anticipada', '%') +
+        '</div>' +
+        '<p class="hint">La comisión de amortización anticipada es solo informativa y no entra en el coste total.</p>' +
+      '</div>' +
+      '<div class="bsec">' +
+        '<h4 class="bh">Gastos de formalización a tu cargo</h4>' +
+        '<div class="grid2">' + gField(o, 'tasacion', 'Tasación') + gField(o, 'notaria', 'Notaría') + gField(o, 'registro', 'Registro') + gField(o, 'gestoria', 'Gestoría') + gField(o, 'ajd', 'Impuesto de AJD') + '</div>' +
+        '<p class="hint">Anota solo lo que pagarías tú. En general, el banco asume notaría, registro, gestoría y AJD de la hipoteca (Ley 5/2019) y el comprador, la tasación. Confírmalo en la oferta.</p>' +
+      '</div>' +
+      '<div class="offer-actions">' +
+        '<button type="button" class="btn" data-act="dup" data-oid="' + id + '">Duplicar oferta</button>' +
+        '<button type="button" class="btn danger" data-act="del" data-oid="' + id + '">Eliminar oferta</button>' +
+      '</div>' +
+    '</div>' +
+  '</article>';
+}
+function applyTipo(o){
+  var card = document.querySelector('[data-offer="' + o.id + '"]');
+  if(!card) return;
+  card.querySelectorAll('[data-for]').forEach(function(el){ el.hidden = el.getAttribute('data-for').split(' ').indexOf(o.tipo) < 0; });
+  card.querySelectorAll('[data-act="tipo"]').forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-v') === o.tipo ? 'true' : 'false'); });
+  var l = card.querySelector('[data-lbl="tinFijo"]');
+  if(l) l.textContent = o.tipo === 'mixta' ? 'TIN del tramo fijo, sin bonificar' : 'TIN sin bonificar';
+}
+function renderOffers(){
+  $('offers').innerHTML = state.offers.map(offerHtml).join('');
+  state.offers.forEach(applyTipo);
+}
+
+/* ---------- cálculo y actualización ---------- */
+function computeAll(){
+  results = {};
+  state.offers.forEach(function(o){
+    try{ results[o.id] = evaluate(o, state); }catch(e){ results[o.id] = null; }
+  });
+}
+function updateGlobalHints(){
+  var h = $('ltvHint');
+  var p = state.precio, f = state.financiar;
+  if(f > 0 && p > 0 && f > p){ h.textContent = 'El importe a financiar supera el precio de la vivienda.'; h.setAttribute('data-state', 'warn'); }
+  else if(f > 0 && p > 0){ h.textContent = 'Financias el ' + nfp.format(f / p * 100) + ' % del precio y aportas ' + eur0(p - f) + ' de entrada.'; h.removeAttribute('data-state'); }
+  else { h.textContent = 'Indica el precio y el importe a financiar para ver las cifras.'; h.removeAttribute('data-state'); }
+  document.querySelectorAll('#euriChips .chip').forEach(function(c){ c.setAttribute('aria-pressed', Math.abs(parseFloat(c.getAttribute('data-e')) - state.euribor) < 1e-9 ? 'true' : 'false'); });
+}
+function updateOfferHeads(){
+  state.offers.forEach(function(o){
+    var r = results[o.id];
+    var nm = $('hn-' + o.id); if(!nm) return;
+    nm.textContent = nameOf(o);
+    $('hm-' + o.id).textContent = TIPOS[o.tipo] + ' · ' + attr(o.years) + ' años' + (r ? ' · TIN ' + pct(r.tin0) : '');
+    $('hc-' + o.id).textContent = r ? eur2(r.cuota0) : '—';
+    $('ht-' + o.id).textContent = r ? eur0(r.costeTotal) : '—';
+    var vh = $('vh-' + o.id);
+    if(vh){
+      var base = state.euribor + num(o.dif);
+      vh.textContent = 'Con un Euríbor del ' + nfp.format(state.euribor) + ' %, el TIN sin bonificar es ' + nfp.format(base) + ' % tras el tramo fijo.';
+      if(o.tipo === 'variable') vh.textContent = 'Con un Euríbor del ' + nfp.format(state.euribor) + ' %, el TIN sin bonificar es ' + nfp.format(base) + ' %.';
+    }
+  });
+}
+function updateVincResults(){
+  state.offers.forEach(function(o){
+    var r = results[o.id];
+    o.vinc.forEach(function(v){
+      var el = $('vr-' + v.id); if(!el) return;
+      var d = r && r.vincDetail.filter(function(x){ return x.id === v.id; })[0];
+      var label = el.querySelector('.vr-label'), text = el.querySelector('.vr-text');
+      if(!d){ el.setAttribute('data-verdict', 'neutral'); label.textContent = ''; text.textContent = 'Indica el importe a financiar para ver el efecto.'; return; }
+      var verdict = Math.abs(d.net) < 0.5 ? 'neutral' : (d.net > 0 ? 'good' : 'bad');
+      el.setAttribute('data-verdict', verdict);
+      label.textContent = verdict === 'good' ? 'Compensa' : (verdict === 'bad' ? 'No compensa' : 'Sin efecto');
+      text.textContent = (v.on ? '' : 'Si la activas: ') + 'ahorras ' + eur0(d.saving) + ' en intereses, cuesta ' + eur0(d.cost) + ', neto ' + signed(d.net);
+    });
+  });
+}
+function renderExampleNote(){ $('exampleNote').hidden = !state.offers.some(function(o){ return o.ex; }); }
+
+function bestOf(rs, key){
+  var best = null;
+  rs.forEach(function(r){ var v = r[key]; if(isFinite(v) && (best === null || v < best.v)) best = {v: v, r: r}; });
+  return best;
+}
+function renderTiles(){
+  var rs = validResults();
+  var host = $('tiles');
+  if(!rs.length){ host.innerHTML = ''; return; }
+  function tile(label, best, fmt, extra){
+    if(!best) return '';
+    return '<div class="tile"><div class="k">' + label + '</div><div class="v">' + fmt(best.v) + '</div><div class="s"><span class="sw sm" style="background:' + colorOf(best.r.o) + '"></span><span>' + esc(nameOf(best.r.o)) + (extra || '') + '</span></div></div>';
+  }
+  var bc = bestOf(rs, 'costeTotal');
+  var worst = rs.reduce(function(a, r){ return Math.max(a, r.costeTotal); }, 0);
+  var extra = rs.length > 1 ? ' · ' + eur0(worst - bc.v) + ' menos que la más cara' : '';
+  host.innerHTML = tile('Menor coste total', bc, eur0, extra) + tile('Menor cuota inicial', bestOf(rs, 'cuota0'), eur2) + tile('Menor TAE real', bestOf(rs, 'taeReal'), pct);
+}
+
+function renderTable(){
+  var rs = validResults();
+  var tbl = $('cmp');
+  if(!rs.length){ tbl.innerHTML = '<tbody><tr><td class="empty" style="text-align:left">Añade una oferta e indica el importe a financiar para ver la comparativa.</td></tr></tbody>'; return; }
+  var bc = bestOf(rs, 'costeTotal');
+  var head = '<thead><tr><th scope="col"></th>' + rs.map(function(r){
+    return '<th scope="col"><div class="hn"><span class="sw sm" style="background:' + colorOf(r.o) + '"></span><span>' + esc(nameOf(r.o)) + '</span></div>' + ((rs.length > 1 && r === bc.r) ? '<span class="badge">✓ Más barata</span>' : '') + '</th>';
+  }).join('') + '</tr></thead>';
+  var rows = [
+    {g: 'Interés'},
+    {l: 'Tipo', t: function(r){ return TIPOS[r.o.tipo]; }},
+    {l: 'Plazo', t: function(r){ return attr(r.o.years) + ' años'; }},
+    {l: 'TIN aplicado (con bonificaciones)', t: function(r){ return pct(r.tin0); }},
+    {l: 'TIN tras el tramo fijo', t: function(r){ return r.tin1 === null ? '—' : pct(r.tin1); }},
+    {g: 'Cuota mensual'},
+    {l: 'Cuota inicial', t: function(r){ return eur2(r.cuota0); }, k: 'cuota0', best: true},
+    {l: 'Cuota tras el tramo fijo', t: function(r){ return r.cuota1 === null ? '—' : eur2(r.cuota1); }},
+    {g: 'Coste total'},
+    {l: 'Intereses', t: function(r){ return eur0(r.interest); }},
+    {l: 'Vinculaciones', t: function(r){ return eur0(r.vincTotal); }},
+    {l: 'Comisiones', t: function(r){ return eur0(r.aperturaTotal); }},
+    {l: 'Gastos de formalización', t: function(r){ return eur0(r.formal); }},
+    {l: 'Coste total', t: function(r){ return eur0(r.costeTotal); }, k: 'costeTotal', best: true, strong: true},
+    {l: 'Total a pagar (capital + coste)', t: function(r){ return eur0(r.totalPagar); }},
+    {g: 'TAE'},
+    {l: 'TAE del préstamo', t: function(r){ return pct(r.taePrestamo); }},
+    {l: 'TAE real (con todo)', t: function(r){ return pct(r.taeReal); }, k: 'taeReal', best: true},
+    {g: 'Efecto de las vinculaciones'},
+    {l: 'Ahorro en intereses', t: function(r){ return eur0(r.saved); }},
+    {l: 'Coste de las vinculaciones', t: function(r){ return eur0(r.vincTotal); }},
+    {l: 'Balance neto', t: function(r){ return signed(r.vincNet); }}
+  ];
+  var body = '<tbody>' + rows.map(function(row){
+    if(row.g) return '<tr class="grp"><th colspan="' + (rs.length + 1) + '">' + row.g + '</th></tr>';
+    var best = row.best ? bestOf(rs, row.k) : null;
+    return '<tr' + (row.strong ? ' class="strong"' : '') + '><td class="lbl-c">' + row.l + '</td>' + rs.map(function(r){
+      var isBest = best && rs.length > 1 && r[row.k] === best.v;
+      return '<td' + (isBest ? ' class="best"' : '') + '>' + row.t(r) + '</td>';
+    }).join('') + '</tr>';
+  }).join('') + '</tbody>';
+  tbl.innerHTML = head + body;
+}
+
+/* ---------- gráficos ---------- */
+function showTip(x, y, title, rows){
+  var tip = $('tip'); tip.textContent = '';
+  var t = document.createElement('div'); t.className = 't'; t.textContent = title; tip.appendChild(t);
+  rows.forEach(function(r){
+    var d = document.createElement('div'); d.className = 'r';
+    if(r.color){ var k = document.createElement('span'); k.className = 'kline'; k.style.background = r.color; d.appendChild(k); }
+    var v = document.createElement('span'); v.className = 'rv'; v.textContent = r.v;
+    var n = document.createElement('span'); n.className = 'rn'; n.textContent = r.n;
+    d.appendChild(v); d.appendChild(n); tip.appendChild(d);
+  });
+  tip.hidden = false;
+  var w = tip.offsetWidth, h = tip.offsetHeight;
+  var L = x + 14, T = y - h - 10;
+  if(L + w > window.innerWidth - 8) L = x - w - 14;
+  if(L < 8) L = 8;
+  if(T < 8) T = y + 18;
+  tip.style.left = L + 'px'; tip.style.top = T + 'px';
+}
+function hideTip(){ $('tip').hidden = true; }
+
+function renderChartA(){
+  var host = $('chartA-body');
+  var rs = validResults().slice().sort(function(a, b){ return a.costeTotal - b.costeTotal; });
+  if(!rs.length){ host.innerHTML = '<p class="empty" style="padding:0">Añade el importe a financiar y al menos una oferta para ver el gráfico.</p>'; return; }
+  if(view.A){
+    host.innerHTML = '<div class="tbl-wrap"><table class="mini"><thead><tr><th>Oferta</th><th>Intereses</th><th>Vinculaciones</th><th>Comisiones y gastos</th><th>Coste total</th></tr></thead><tbody>' +
+      rs.map(function(r){ return '<tr><td>' + esc(nameOf(r.o)) + '</td><td>' + eur0(r.interest) + '</td><td>' + eur0(r.vincTotal) + '</td><td>' + eur0(r.upfront) + '</td><td><strong>' + eur0(r.costeTotal) + '</strong></td></tr>'; }).join('') + '</tbody></table></div>';
+    return;
+  }
+  var max = rs[rs.length - 1].costeTotal || 1, best = rs[0].costeTotal;
+  host.innerHTML = rs.map(function(r, i){
+    var w = Math.max(1, r.costeTotal / max * 70).toFixed(1);
+    return '<div class="barrow" tabindex="0" data-i="' + i + '">' +
+      '<div class="br-name"><span class="sw sm" style="background:' + colorOf(r.o) + '"></span><span class="nm">' + esc(nameOf(r.o)) + '</span><span class="dlt">' + (i === 0 ? (rs.length > 1 ? 'Más barata' : '') : signed(r.costeTotal - best) + ' sobre la más barata') + '</span></div>' +
+      '<div class="track"><div class="bar" style="flex:0 0 ' + w + '%;background:' + colorOf(r.o) + '"></div><span class="val">' + eur0(r.costeTotal) + '</span></div></div>';
+  }).join('');
+  host.querySelectorAll('.barrow').forEach(function(el){
+    var r = rs[parseInt(el.getAttribute('data-i'), 10)];
+    var rows = [
+      {v: eur0(r.interest), n: 'Intereses'}, {v: eur0(r.vincTotal), n: 'Vinculaciones'},
+      {v: eur0(r.aperturaTotal), n: 'Comisiones'}, {v: eur0(r.formal), n: 'Gastos de formalización'},
+      {v: eur0(r.costeTotal), n: 'Coste total'}
+    ];
+    var title = nameOf(r.o);
+    el.addEventListener('pointermove', function(e){ showTip(e.clientX, e.clientY, title, rows); });
+    el.addEventListener('pointerleave', hideTip);
+    el.addEventListener('focus', function(){ var b = el.getBoundingClientRect(); showTip(b.left + 24, b.top, title, rows); });
+    el.addEventListener('blur', hideTip);
+  });
+}
+
+function niceStep(raw){
+  var p = Math.pow(10, Math.floor(Math.log10(raw)));
+  var f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+function renderChartB(){
+  var host = $('chartB-body'), leg = $('chartB-legend');
+  var rs = validResults();
+  leg.textContent = '';
+  if(!rs.length){ host.innerHTML = '<p class="empty" style="padding:0">Añade el importe a financiar y al menos una oferta para ver el gráfico.</p>'; return; }
+  rs.forEach(function(r){
+    var s = document.createElement('span'); s.className = 'legend-item';
+    var k = document.createElement('span'); k.className = 'lk'; k.style.background = colorOf(r.o);
+    var t = document.createElement('span'); t.textContent = nameOf(r.o);
+    s.appendChild(k); s.appendChild(t); leg.appendChild(s);
+  });
+  var maxN = Math.max.apply(null, rs.map(function(r){ return r.n; }));
+  if(view.B){
+    var maxY = Math.round(maxN / 12);
+    var marks = [1, 5, 10, 15, 20, 25, 30, 35, 40].filter(function(y){ return y <= maxY; });
+    if(marks.indexOf(maxY) < 0) marks.push(maxY);
+    host.innerHTML = '<div class="tbl-wrap"><table class="mini"><thead><tr><th>Año</th>' + rs.map(function(r){ return '<th>' + esc(nameOf(r.o)) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      marks.map(function(y){ return '<tr><td>' + y + '</td>' + rs.map(function(r){ var m = Math.min(y * 12, r.n); return '<td>' + (y * 12 <= r.n + 6 ? eur0(r.cum[m]) : '—') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+    return;
+  }
+  var W = Math.max(300, Math.floor(host.clientWidth || 600)), H = 270;
+  var m = {l: 58, r: 16, t: 16, b: 32};
+  var iw = W - m.l - m.r, ih = H - m.t - m.b;
+  var maxV = Math.max.apply(null, rs.map(function(r){ return r.cum[r.n]; })) || 1;
+  var step = niceStep(maxV / 4), yMax = Math.ceil(maxV / step) * step;
+  function X(mo){ return m.l + iw * mo / maxN; }
+  function Y(v){ return m.t + ih * (1 - v / yMax); }
+  var s = '<svg class="chart-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" tabindex="0" role="img" aria-label="Gráfico de líneas del coste acumulado de cada oferta a lo largo del plazo">';
+  for(var v = 0; v <= yMax + 1e-6; v += step){
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" style="stroke:' + (v === 0 ? 'var(--axis)' : 'var(--grid)') + '" stroke-width="1"/>';
+    s += '<text x="' + (m.l - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + nf0.format(v) + '</text>';
+  }
+  var yrs = maxN / 12, ys = yrs <= 10 ? 1 : (yrs <= 20 ? 2 : 5);
+  for(var y = 0; y <= yrs + 1e-6; y += ys){
+    s += '<text x="' + X(y * 12).toFixed(1) + '" y="' + (H - 14) + '" text-anchor="middle">' + y + '</text>';
+  }
+  s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">años desde la firma</text>';
+  var low = bestOf(rs.map(function(r){ return {o: r.o, end: r.cum[r.n]}; }), 'end');
+  rs.forEach(function(r){
+    var pts = [];
+    for(var mo = 0; mo < r.n; mo += 12) pts.push(X(mo).toFixed(1) + ',' + Y(r.cum[mo]).toFixed(1));
+    pts.push(X(r.n).toFixed(1) + ',' + Y(r.cum[r.n]).toFixed(1));
+    s += '<polyline fill="none" style="stroke:' + colorOf(r.o) + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(' ') + '"/>';
+  });
+  rs.forEach(function(r){
+    s += '<circle cx="' + X(r.n).toFixed(1) + '" cy="' + Y(r.cum[r.n]).toFixed(1) + '" r="5" style="fill:' + colorOf(r.o) + ';stroke:var(--surface)" stroke-width="2"/>';
+  });
+  if(rs.length > 1 && low){
+    var lr = rs.filter(function(r){ return r.o === low.r.o; })[0];
+    s += '<text class="lastlbl" x="' + (X(lr.n) - 4).toFixed(1) + '" y="' + (Y(lr.cum[lr.n]) + 20).toFixed(1) + '" text-anchor="end">' + eur0(lr.cum[lr.n]) + '</text>';
+  }
+  s += '<line id="xh" y1="' + m.t + '" y2="' + (m.t + ih) + '" style="stroke:var(--axis)" stroke-width="1" visibility="hidden"/>';
+  rs.forEach(function(r, i){ s += '<circle class="hd" data-i="' + i + '" r="5" style="fill:' + colorOf(r.o) + ';stroke:var(--surface)" stroke-width="2" visibility="hidden"/>'; });
+  s += '<rect id="hit" x="' + m.l + '" y="' + m.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/></svg>';
+  host.innerHTML = s;
+  var svg = host.querySelector('svg'), xh = svg.querySelector('#xh'), hit = svg.querySelector('#hit');
+  var dots = svg.querySelectorAll('.hd');
+  var cur = null;
+  function showMonth(mo, clientX, clientY){
+    mo = Math.max(0, Math.min(maxN, Math.round(mo / 12) * 12));
+    cur = mo;
+    xh.setAttribute('x1', X(mo)); xh.setAttribute('x2', X(mo)); xh.setAttribute('visibility', 'visible');
+    var rows = [];
+    rs.forEach(function(r, i){
+      var d = dots[i];
+      if(mo <= r.n){ d.setAttribute('cx', X(mo)); d.setAttribute('cy', Y(r.cum[mo])); d.setAttribute('visibility', 'visible'); rows.push({color: colorOf(r.o), v: eur0(r.cum[mo]), n: nameOf(r.o)}); }
+      else d.setAttribute('visibility', 'hidden');
+    });
+    showTip(clientX, clientY, mo === 0 ? 'Al firmar' : 'Año ' + (mo / 12), rows);
+  }
+  function hideAll(){ xh.setAttribute('visibility', 'hidden'); dots.forEach(function(d){ d.setAttribute('visibility', 'hidden'); }); hideTip(); cur = null; }
+  function fromEvent(e){
+    var b = svg.getBoundingClientRect();
+    var px = (e.clientX - b.left) * (W / b.width);
+    showMonth((px - m.l) / iw * maxN, e.clientX, e.clientY);
+  }
+  hit.addEventListener('pointermove', fromEvent);
+  hit.addEventListener('pointerdown', fromEvent);
+  hit.addEventListener('pointerleave', hideAll);
+  svg.addEventListener('keydown', function(e){
+    if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    var b = svg.getBoundingClientRect();
+    var next = (cur === null ? 0 : cur) + (e.key === 'ArrowRight' ? 12 : -12);
+    next = Math.max(0, Math.min(maxN, next));
+    showMonth(next, b.left + X(next) * (b.width / W), b.top + m.t + 10);
+  });
+  svg.addEventListener('blur', hideAll);
+}
+function renderCharts(){ renderChartA(); renderChartB(); }
+
+/* ---------- actualización general ---------- */
+function updateAll(){
+  computeAll();
+  updateGlobalHints();
+  updateOfferHeads();
+  updateVincResults();
+  renderExampleNote();
+  renderTiles();
+  renderTable();
+  renderCharts();
+  save();
+}
+function structural(){ renderOffers(); updateAll(); }
+
+/* ---------- eventos ---------- */
+function syncGlobalInputs(){
+  $('precio').value = attr(state.precio); $('financiar').value = attr(state.financiar); $('euribor').value = attr(state.euribor).replace('.', ',');
+}
+['precio', 'financiar', 'euribor'].forEach(function(f){
+  $(f).addEventListener('input', function(){ state[f] = num($(f).value); updateAll(); });
+});
+[1.5, 2.5, 3.5, 4.5].forEach(function(e){
+  var b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.setAttribute('data-e', e); b.setAttribute('aria-pressed', 'false');
+  b.textContent = nfp.format(e) + ' %';
+  b.addEventListener('click', function(){ state.euribor = e; $('euribor').value = String(e).replace('.', ','); updateAll(); });
+  $('euriChips').appendChild(b);
+});
+
+$('offers').addEventListener('input', function(e){
+  var t = e.target, oid = t.getAttribute('data-oid');
+  if(!oid) return;
+  var o = findOffer(oid); if(!o) return;
+  var f = t.getAttribute('data-f'), gf = t.getAttribute('data-gf'), vid = t.getAttribute('data-vid');
+  if(f){ o[f] = (t.type === 'number') ? num(t.value) : t.value; }
+  else if(gf){ o.g[gf] = num(t.value); }
+  else if(vid){
+    var v = o.vinc.filter(function(x){ return x.id === vid; })[0]; if(!v) return;
+    var vf = t.getAttribute('data-vf');
+    if(vf === 'on') v.on = t.checked;
+    else if(vf === 'name') v.name = t.value;
+    else v[vf] = num(t.value);
+  }
+  updateAll();
+});
+
+var armTimer = null;
+function arm(btn, label, fn){
+  if(btn.getAttribute('data-armed') === '1'){ clearTimeout(armTimer); fn(); return; }
+  var old = btn.textContent;
+  btn.setAttribute('data-armed', '1'); btn.textContent = label;
+  armTimer = setTimeout(function(){ btn.removeAttribute('data-armed'); btn.textContent = old; }, 3500);
+}
+$('offers').addEventListener('click', function(e){
+  var b = e.target.closest('[data-act]'); if(!b) return;
+  var act = b.getAttribute('data-act'), oid = b.getAttribute('data-oid');
+  var o = findOffer(oid); if(!o) return;
+  if(act === 'toggle'){
+    o.open = !o.open;
+    b.setAttribute('aria-expanded', o.open ? 'true' : 'false');
+    $('ob-' + oid).hidden = !o.open;
+    save();
+  } else if(act === 'tipo'){
+    o.tipo = b.getAttribute('data-v'); applyTipo(o); updateAll();
+  } else if(act === 'addvinc'){
+    var name = b.getAttribute('data-name');
+    o.vinc.push(newVinc(name === 'Otra' ? 'Otra vinculación' : name, 0.1, 0));
+    $('vl-' + oid).innerHTML = vincListHtml(o); updateAll();
+  } else if(act === 'delvinc'){
+    var vid = b.getAttribute('data-vid');
+    o.vinc = o.vinc.filter(function(v){ return v.id !== vid; });
+    $('vl-' + oid).innerHTML = vincListHtml(o); updateAll();
+  } else if(act === 'dup'){
+    var c = JSON.parse(JSON.stringify(o));
+    c.id = nid('o'); c.ex = false; c.name = nameOf(o) + ' (copia)'; c.open = true;
+    c.vinc.forEach(function(v){ v.id = nid('v'); });
+    if(state.offers.length >= 8){ toast('El máximo es de 8 ofertas.'); return; }
+    c.slot = freeSlot();
+    state.offers.splice(state.offers.indexOf(o) + 1, 0, c);
+    structural();
+  } else if(act === 'del'){
+    arm(b, '¿Seguro? Pulsa de nuevo', function(){
+      state.offers = state.offers.filter(function(x){ return x.id !== oid; });
+      structural();
+    });
+  }
+});
+
+function freeSlot(){
+  for(var s = 0; s < 8; s++){ if(!state.offers.some(function(o){ return o.slot === s; })) return s; }
+  return 0;
+}
+$('addOffer').addEventListener('click', function(){
+  if(state.offers.length >= 8){ toast('El máximo es de 8 ofertas.'); return; }
+  var slot = freeSlot();
+  var o = newOffer(slot, 'Oferta ' + String.fromCharCode(65 + slot));
+  state.offers.push(o);
+  structural();
+  var card = document.querySelector('[data-offer="' + o.id + '"]');
+  if(card) card.scrollIntoView({block: 'nearest'});
+});
+$('clearExamples').addEventListener('click', function(){
+  state.offers = state.offers.filter(function(o){ return !o.ex; });
+  if(!state.offers.length) state.offers.push(newOffer(0, 'Oferta A'));
+  structural();
+});
+$('resetExamples').addEventListener('click', function(){
+  arm($('resetExamples'), '¿Reemplazar tus datos? Pulsa de nuevo', function(){
+    state = sanitize(exampleState());
+    $('resetExamples').removeAttribute('data-armed'); $('resetExamples').textContent = 'Volver a los datos de ejemplo';
+    syncGlobalInputs(); structural();
+  });
+});
+
+document.querySelectorAll('[data-toggle]').forEach(function(b){
+  b.addEventListener('click', function(){
+    var k = b.getAttribute('data-toggle');
+    view[k] = !view[k];
+    b.textContent = view[k] ? 'Ver gráfico' : 'Ver tabla';
+    b.setAttribute('aria-pressed', view[k] ? 'true' : 'false');
+    hideTip(); renderCharts();
+  });
+});
+
+var toastTimer = null;
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.hidden = true; }, 2200);
+}
+$('copyBtn').addEventListener('click', function(){
+  var rs = validResults();
+  if(!rs.length){ toast('No hay nada que copiar todavía.'); return; }
+  var lines = ['Comparativa de hipotecas', 'Precio ' + eur0(state.precio) + ' · Financiado ' + eur0(state.financiar) + ' · Euríbor supuesto ' + nfp.format(state.euribor) + ' %', ''];
+  rs.forEach(function(r){
+    lines.push(nameOf(r.o) + ' (' + TIPOS[r.o.tipo] + ', ' + attr(r.o.years) + ' años)');
+    lines.push('  TIN aplicado ' + pct(r.tin0) + ' · Cuota inicial ' + eur2(r.cuota0) + ' · Coste total ' + eur0(r.costeTotal) + ' · TAE real ' + pct(r.taeReal));
+  });
+  var text = lines.join('\n');
+  try{
+    navigator.clipboard.writeText(text).then(function(){ toast('Resumen copiado'); }, function(){ toast('No se pudo copiar'); });
+  }catch(err){ toast('No se pudo copiar'); }
+});
+
+if('ResizeObserver' in window){
+  var lastW = 0;
+  new ResizeObserver(function(){
+    var w = $('chartB-body').clientWidth;
+    if(w && w !== lastW){ lastW = w; if(!view.B) renderChartB(); }
+  }).observe($('chartB-body'));
+}
+
+syncGlobalInputs();
+structural();
+})();
+</script>
+</div>
+<script>
+(function(){
+var GATE_HASH = "16911eebd911365ee7d2250df0b7fd72be3870a546363b313d235976985215bd";
+var GATE_KEY = "hipotecas_unlocked";
+function show(){ document.getElementById("gate").hidden = true; document.getElementById("app").hidden = false; window.dispatchEvent(new Event("resize")); }
+async function sha(str){ var b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)); return Array.from(new Uint8Array(b)).map(function(x){ return x.toString(16).padStart(2, "0"); }).join(""); }
+var inp = document.getElementById("gateInput"), err = document.getElementById("gateError");
+document.getElementById("gateBtn").addEventListener("click", async function(){
+  var ok = false;
+  try{ ok = (await sha(inp.value.trim())) === GATE_HASH; }catch(e){}
+  if(ok){ try{ localStorage.setItem(GATE_KEY, "1"); }catch(e){} show(); }
+  else { err.hidden = false; inp.value = ""; inp.focus(); }
+});
+inp.addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("gateBtn").click(); });
+inp.addEventListener("input", function(){ err.hidden = true; });
+try{ if(localStorage.getItem(GATE_KEY) === "1") show(); }catch(e){}
+})();
+</script>
+</body>
+</html>
