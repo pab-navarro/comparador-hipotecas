@@ -48,7 +48,7 @@ img{max-width:100%}
 }
 *{box-sizing:border-box}
 body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 "Roboto",system-ui,-apple-system,"Segoe UI",sans-serif; padding-inline:16px; padding-block:0; -webkit-font-smoothing:antialiased}
-.wrap{max-width:920px; margin-inline:auto; padding-block:24px 72px; display:grid; gap:30px}
+.wrap{max-width:920px; margin-inline:auto; padding-block:24px 72px; display:grid; grid-template-columns:minmax(0,1fr); gap:30px}
 h1{font-size:23px; line-height:1.2; font-weight:500; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
 h2{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.1em; color:var(--ink2); margin:0}
 h3{font-size:15px; font-weight:500; margin:0}
@@ -185,6 +185,10 @@ table.mini thead th{font-weight:500; color:var(--ink2)}
 .notes{display:grid; gap:6px; font-size:13px; color:var(--ink2)}
 .notes ul{margin:0; padding-left:18px; display:grid; gap:4px}
 @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+.inp select{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:inherit; font-size:16px; padding:9px 10px; border-radius:6px}
+.inp select:focus{outline:none}
+.srow{display:grid; grid-template-columns:1fr 130px 32px; gap:8px; align-items:center}
+.sbox{display:grid; gap:10px; border-top:1px solid var(--line); padding-top:16px}
 #gate{position:fixed; inset:0; z-index:100; background:var(--bg); display:grid; place-items:center; padding:16px}
 #gateBox{width:100%; max-width:320px; text-align:center}
 #gateBox h2{font-size:19px; font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink); margin:0 0 4px}
@@ -192,6 +196,12 @@ table.mini thead th{font-weight:500; color:var(--ink2)}
 #gateInput{width:100%; font:inherit; font-size:24px; letter-spacing:.5em; text-align:center; padding:12px 8px 12px 20px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); margin-bottom:12px}
 #gateBtn{width:100%; font:inherit; font-size:15px; font-weight:500; padding:12px; border:0; border-radius:8px; background:var(--accent); color:var(--accent-ink); cursor:pointer}
 #gateError{color:var(--bad); font-size:13px; margin:12px 0 0}
+.filehidden{position:absolute; width:1px; height:1px; opacity:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+textarea.bk{width:100%; min-height:110px; font:12.5px/1.4 "Roboto Mono",ui-monospace,monospace; padding:10px; border:1px solid var(--line); border-radius:6px; background:var(--field); color:var(--ink); resize:vertical}
+table.cmp td.warn{color:var(--bad); font-weight:500}
+.chart-note{font-size:13px; color:var(--ink); margin:0 0 12px; overflow-wrap:anywhere}
+.offers,.offer-body,.bsec,.vlist,.vrow,.charts,.sbox,.notes{grid-template-columns:minmax(0,1fr)}
+.seg button{min-width:0}
 </style>
 
 </head>
@@ -230,6 +240,36 @@ table.mini thead th{font-weight:500; color:var(--ink2)}
       <div class="chips" id="euriChips" role="group" aria-label="Escenarios de Euríbor">
         <span class="cl">Probar Euríbor:</span>
       </div>
+      <div class="sbox">
+        <h3>Seguros que necesitarás en cualquier caso</h3>
+        <p class="hint">Precio anual que pagarías por ellos fuera de la hipoteca. Se suman al total de cada oferta, salvo en las que los incluyan como vinculación.</p>
+        <div class="vlist" id="segList"></div>
+        <div><button type="button" class="btn" id="addSeg">+ Añadir seguro</button></div>
+      </div>
+      <div class="sbox">
+        <h3>Gastos de la compra e ingresos</h3>
+        <div class="grid2">
+          <label class="field"><span class="lbl">Tipo de vivienda</span><span class="inp"><select class="gin" data-k="compra.tipo"><option value="nueva">Obra nueva</option><option value="segunda">Segunda mano</option></select></span></label>
+          <label class="field" data-tipo="nueva"><span class="lbl">IVA</span><span class="inp"><input class="gin" data-k="compra.iva" type="number" inputmode="decimal" step="any" min="0"><span class="unit">%</span></span></label>
+          <label class="field" data-tipo="nueva"><span class="lbl">Actos jurídicos documentados</span><span class="inp"><input class="gin" data-k="compra.ajd" type="number" inputmode="decimal" step="any" min="0"><span class="unit">%</span></span></label>
+          <label class="field" data-tipo="segunda"><span class="lbl">Transmisiones patrimoniales (ITP)</span><span class="inp"><input class="gin" data-k="compra.itp" type="number" inputmode="decimal" step="any" min="0"><span class="unit">%</span></span></label>
+          <label class="field"><span class="lbl">Notaría, registro y gestoría de la compraventa</span><span class="inp"><input class="gin" data-k="compra.otros" type="number" inputmode="decimal" step="any" min="0"><span class="unit">€</span></span></label>
+          <label class="field"><span class="lbl">Ingresos netos mensuales del hogar</span><span class="inp"><input class="gin" data-k="ingresos" type="number" inputmode="decimal" step="any" min="0"><span class="unit">€</span></span></label>
+        </div>
+        <p class="hint">Los porcentajes vienen con valores orientativos de Madrid (IVA 10 %, AJD 0,75 %, ITP 6 %). Confírmalos para tu comunidad. Se supone que el precio no incluye el IVA.</p>
+        <p class="hint" id="compraHint"></p>
+      </div>
+      <div class="sbox">
+        <h3>Amortización anticipada (opcional)</h3>
+        <div class="grid2">
+          <label class="field"><span class="lbl">Aportación extra</span><span class="inp"><input class="gin" data-k="prepay.amount" type="number" inputmode="decimal" step="any" min="0"><span class="unit">€</span></span></label>
+          <label class="field"><span class="lbl">Frecuencia</span><span class="inp"><select class="gin" data-k="prepay.repeat"><option value="anual">Cada año</option><option value="unica">Una sola vez</option></select></span></label>
+          <label class="field"><span class="lbl">A partir del año</span><span class="inp"><input class="gin" data-k="prepay.from" type="number" inputmode="numeric" step="1" min="1"><span class="unit">año</span></span></label>
+          <label class="field"><span class="lbl">Qué reduces (plazo o cuota)</span><span class="inp"><select class="gin" data-k="prepay.mode"><option value="plazo">El plazo</option><option value="cuota">La cuota</option></select></span></label>
+          <label class="field"><span class="lbl">Rentabilidad neta anual si lo inviertes</span><span class="inp"><input class="gin" data-k="prepay.rent" type="number" inputmode="decimal" step="any"><span class="unit">%</span></span></label>
+        </div>
+        <p class="hint">Con una aportación mayor que cero, la comparativa muestra cuánto ahorras y si te sale mejor amortizar o invertir ese dinero. La comisión de cada oferta se toma del campo «Amortización anticipada».</p>
+      </div>
     </div>
   </section>
 
@@ -253,14 +293,39 @@ table.mini thead th{font-weight:500; color:var(--ink2)}
     <div class="charts">
       <div class="card">
         <div class="chart-head"><h3>Coste total por oferta</h3><button type="button" class="link" data-toggle="A" aria-pressed="false">Ver tabla</button></div>
-        <p class="chart-sub">Intereses, vinculaciones, comisiones y gastos sumados. Sin contar el capital que devuelves.</p>
+        <p class="chart-sub">Intereses, vinculaciones, comisiones, gastos y seguros necesarios fuera de la hipoteca. Sin contar el capital que devuelves.</p>
         <div id="chartA-body"></div>
       </div>
       <div class="card">
         <div class="chart-head"><h3>Coste acumulado en el tiempo</h3><button type="button" class="link" data-toggle="B" aria-pressed="false">Ver tabla</button></div>
-        <p class="chart-sub">Lo que has pagado de más sobre el capital en cada año desde la firma. Donde se cruzan dos líneas, cambia la oferta más barata.</p>
+        <p class="chart-sub">Lo que has pagado de más sobre el capital en cada año desde la firma, seguros necesarios incluidos. Donde se cruzan dos líneas, cambia la oferta más barata.</p>
         <div class="legend" id="chartB-legend"></div>
         <div id="chartB-body"></div>
+      </div>
+      <div class="card">
+        <div class="chart-head"><h3>Coste total según el Euríbor</h3><button type="button" class="link" data-toggle="C" aria-pressed="false">Ver tabla</button></div>
+        <p class="chart-sub">Coste total con seguros de cada oferta si el Euríbor fuera constante en cada valor. Las fijas no cambian.</p>
+        <p class="chart-note" id="chartC-text"></p>
+        <div class="legend" id="chartC-legend"></div>
+        <div id="chartC-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-bk">
+    <h2 id="h-bk" style="margin-bottom:12px">Copia de seguridad</h2>
+    <div class="card" style="display:grid; gap:12px">
+      <p class="hint">Tus datos viven solo en este navegador. Exporta una copia para guardarla o pasarla a otro dispositivo.</p>
+      <div class="chips">
+        <button type="button" class="btn" id="bkExport">Exportar archivo</button>
+        <button type="button" class="btn" id="bkCopy">Copiar datos</button>
+        <button type="button" class="btn" id="bkImport">Importar archivo</button>
+        <button type="button" class="btn" id="bkPaste">Pegar datos</button>
+      </div>
+      <input type="file" id="bkFile" class="filehidden" accept=".json,application/json" aria-label="Archivo de copia de seguridad">
+      <div id="bkBox" style="display:grid; gap:10px" hidden>
+        <textarea class="bk" id="bkText" aria-label="Datos de la copia" spellcheck="false"></textarea>
+        <div><button type="button" class="btn primary" id="bkLoad">Cargar estos datos</button></div>
       </div>
     </div>
   </section>
@@ -270,8 +335,11 @@ table.mini thead th{font-weight:500; color:var(--ink2)}
     <ul>
       <li>Cuota de amortización francesa. El Euríbor se mantiene constante todo el plazo; cámbialo arriba para ver otros escenarios.</li>
       <li>La bonificación de cada vinculación activa resta puntos al TIN durante todo el plazo, en el tramo fijo y en el variable.</li>
-      <li>Las vinculaciones se pagan cada año al mismo importe, sin subidas. Anota solo el sobrecoste frente a lo que ya pagarías.</li>
+      <li>Las vinculaciones se pagan cada año al mismo importe, sin subidas. Si una vinculación es un seguro que necesitarías igualmente, anota su prima completa y vincúlala al seguro correspondiente: su precio externo no se suma dos veces.</li>
       <li>TAE real: tasa que iguala el capital recibido, menos los gastos iniciales, con todos los pagos mensuales y el coste de las vinculaciones.</li>
+      <li>Dinero necesario al firmar: entrada, impuestos y gastos de la compra, más las comisiones y gastos de formalización de cada oferta.</li>
+      <li>Para negociar: rebaja de TIN (y, en variables y mixtas, también del diferencial) que necesita cada oferta para igualar el total con seguros de la más barata.</li>
+      <li>Amortizar o invertir: se compara, al final del plazo original, el dinero que te ahorras de cuota al amortizar con el que acumularías invirtiendo esas mismas aportaciones, a la rentabilidad que indiques.</li>
       <li>Es una herramienta de comparación. La FEIN y la oferta vinculante de cada banco son las que mandan.</li>
     </ul>
     <p><button type="button" class="link" id="resetExamples">Volver a los datos de ejemplo</button></p>
@@ -354,9 +422,26 @@ function evaluate(o, g){
   var n = rt.n;
   var sched = amortize(cap, rt.phases, n);
   var noBonus = amortize(cap, phasesFor(o, euribor, 0).phases, n);
-  var vincAnnual = 0;
-  for(var k = 0; k < o.vinc.length; k++) if(o.vinc[k].on) vincAnnual += num(o.vinc[k].coste);
+  var seg = g.seguros || [];
+  function segOf(v){ if(!v.link) return null; for(var q = 0; q < seg.length; q++) if(seg[q].id === v.link) return seg[q]; return null; }
+  var vincAnnual = 0, extraAnnual = 0, covered = {};
+  for(var k = 0; k < o.vinc.length; k++){
+    var vk = o.vinc[k];
+    if(!vk.on) continue;
+    var sk = segOf(vk);
+    vincAnnual += num(vk.coste);
+    extraAnnual += num(vk.coste) - (sk ? num(sk.precio) : 0);
+    if(sk) covered[sk.id] = true;
+  }
   var vincTotal = vincAnnual * n / 12;
+  var extTotal = 0, extItems = [];
+  for(var q2 = 0; q2 < seg.length; q2++){
+    var cv = !!covered[seg[q2].id];
+    var cst = cv ? 0 : num(seg[q2].precio) * n / 12;
+    extTotal += cst;
+    extItems.push({id: seg[q2].id, name: seg[q2].name, cost: cst, covered: cv});
+  }
+  var extAnnual = extTotal * 12 / n;
   var apertura = cap * num(o.apertura) / 100 + num(o.otros);
   var formal = 0;
   for(var key in o.g) formal += num(o.g[key]);
@@ -366,12 +451,13 @@ function evaluate(o, g){
     var bo = bonusSum(o, v.id);
     var i0 = amortize(cap, phasesFor(o, euribor, bo).phases, n).totalInt;
     var i1 = amortize(cap, phasesFor(o, euribor, bo + num(v.bonus)).phases, n).totalInt;
-    var saving = i0 - i1, cost = num(v.coste) * n / 12;
+    var sv = segOf(v);
+    var saving = i0 - i1, cost = (num(v.coste) - (sv ? num(sv.precio) : 0)) * n / 12;
     return {id: v.id, saving: saving, cost: cost, net: saving - cost};
   });
   var cum = new Float64Array(n + 1);
   cum[0] = upfront;
-  for(var t = 0; t < n; t++) cum[t + 1] = cum[t] + sched.int[t] + vincAnnual / 12;
+  for(var t = 0; t < n; t++) cum[t + 1] = cum[t] + sched.int[t] + vincAnnual / 12 + extAnnual / 12;
   var ph = rt.phases;
   var cap0 = cap - (cap * num(o.apertura) / 100);
   return {
@@ -381,11 +467,102 @@ function evaluate(o, g){
     interest: sched.totalInt, vincTotal: vincTotal, aperturaTotal: apertura, formal: formal,
     upfront: upfront, costeTotal: costeTotal, totalPagar: cap + costeTotal,
     taePrestamo: annualFromFlows(cap0, sched.pay, n, 0),
-    taeReal: annualFromFlows(cap - upfront, sched.pay, n, vincAnnual / 12),
+    taeReal: annualFromFlows(cap - upfront, sched.pay, n, extraAnnual / 12),
     saved: noBonus.totalInt - sched.totalInt,
-    vincNet: (noBonus.totalInt - sched.totalInt) - vincTotal,
+    vincExtra: extraAnnual * n / 12, extTotal: extTotal, extItems: extItems, costeAll: costeTotal + extTotal,
+    vincNet: (noBonus.totalInt - sched.totalInt) - extraAnnual * n / 12,
     vincDetail: vincDetail, cum: cum
   };
+}
+
+function nperMonths(bal, c, rate){
+  var i = rate / 1200;
+  if(bal <= 0) return 0;
+  if(i === 0) return bal / c;
+  var x = 1 - bal * i / c;
+  if(x <= 0) return Infinity;
+  return -Math.log(x) / Math.log(1 + i);
+}
+
+function simPrepay(o, g, plan){
+  var cap = g.financiar;
+  var rt = phasesFor(o, g.euribor, bonusSum(o));
+  var n = rt.n, rateAt = new Float64Array(n), m = 0;
+  rt.phases.forEach(function(ph){ for(var j = 0; j < ph.months; j++) rateAt[m++] = ph.rate; });
+  var pct = num(o.amortPct);
+  var bal = cap, c = pmt(cap, rateAt[0], n), totalInt = 0, comm = 0, months = n;
+  var pay = new Float64Array(n), events = [];
+  var doPre = !!plan && num(plan.amount) > 0;
+  var from = Math.max(1, Math.round(plan ? num(plan.from) : 1));
+  for(var t = 0; t < n && bal > 0.005; t++){
+    var r = rateAt[t];
+    if(t > 0 && r !== rateAt[t - 1]){
+      if(plan && plan.mode === 'plazo' && events.length){
+        var T = nperMonths(bal, c, rateAt[t - 1]);
+        c = pmt(bal, r, isFinite(T) ? T : n - t);
+      } else c = pmt(bal, r, n - t);
+    }
+    var i = bal * r / 1200, pr = c - i;
+    if(pr >= bal){ pay[t] = bal + i; totalInt += i; bal = 0; months = t + 1; break; }
+    bal -= pr; pay[t] = c; totalInt += i; months = t + 1;
+    if(doPre && (t + 1) % 12 === 0 && t + 1 < n){
+      var yr = (t + 1) / 12;
+      if(yr >= from && (plan.repeat || yr === from)){
+        var P = Math.min(num(plan.amount), bal);
+        if(P > 0){
+          var cm = P * pct / 100;
+          bal -= P; comm += cm; events.push({m: t + 1, amt: P, comm: cm});
+          if(bal <= 0.005){ months = t + 1; break; }
+          if(plan.mode === 'cuota') c = pmt(bal, rateAt[t + 1], n - (t + 1));
+        }
+      }
+    }
+  }
+  return {months: months, totalInt: totalInt, comm: comm, pay: pay, events: events, c: c, n: n};
+}
+
+function prepayResult(o, g, plan, rent){
+  if(!plan || !(num(plan.amount) > 0)) return null;
+  var base = simPrepay(o, g, null), sim = simPrepay(o, g, plan);
+  var n = base.n, mr = Math.pow(1 + num(rent) / 100, 1 / 12) - 1, WA = 0, WB = 0, tot = 0;
+  for(var t = 0; t < n; t++) WA += (base.pay[t] - sim.pay[t]) * Math.pow(1 + mr, n - 1 - t);
+  sim.events.forEach(function(ev){ WB += (ev.amt + ev.comm) * Math.pow(1 + mr, n - ev.m); tot += ev.amt; });
+  var intSaved = base.totalInt - sim.totalInt;
+  return {newMonths: sim.months, monthsSaved: base.months - sim.months, intSaved: intSaved, comm: sim.comm,
+          net: intSaved - sim.comm, cNew: sim.c, WA: WA, WB: WB, aportado: tot, nEvents: sim.events.length};
+}
+
+function negotiate(o, g, target){
+  function costAt(d){
+    var c = Object.assign({}, o);
+    c.tinFijo = num(o.tinFijo) - d; c.dif = num(o.dif) - d;
+    var r = evaluate(c, g); return r ? r.costeAll : NaN;
+  }
+  if(!(costAt(0) > target)) return {d: 0, tin: num(o.tinFijo), dif: num(o.dif)};
+  var hi = 6;
+  if(!(costAt(hi) <= target)) return {unreachable: true};
+  var lo = 0;
+  for(var k = 0; k < 32; k++){ var mid = (lo + hi) / 2; if(costAt(mid) > target) lo = mid; else hi = mid; }
+  var d = (lo + hi) / 2;
+  return {d: d, tin: num(o.tinFijo) - d, dif: num(o.dif) - d};
+}
+
+function sweepEuribor(offers, g){
+  var es = [], k;
+  for(k = 0; k <= 60; k++) es.push(Math.round(k * 10) / 100);
+  var costs = {};
+  offers.forEach(function(o){
+    var arr = [], cache = null;
+    es.forEach(function(e){
+      if(o.tipo === 'fija' && cache !== null){ arr.push(cache); return; }
+      var r = evaluate(o, {financiar: g.financiar, euribor: e, seguros: g.seguros});
+      var v = r ? r.costeAll : NaN;
+      if(o.tipo === 'fija') cache = v;
+      arr.push(v);
+    });
+    costs[o.id] = arr;
+  });
+  return {es: es, costs: costs};
 }
 /* CALC-END */
 
@@ -404,6 +581,7 @@ function attr(v){ return (v === undefined || v === null || (typeof v === 'number
 
 var nf0 = new Intl.NumberFormat('es-ES', {maximumFractionDigits:0, useGrouping:'always'});
 var nf2 = new Intl.NumberFormat('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2, useGrouping:'always'});
+var nf1 = new Intl.NumberFormat('es-ES', {minimumFractionDigits:1, maximumFractionDigits:1});
 var nfp = new Intl.NumberFormat('es-ES', {minimumFractionDigits:2, maximumFractionDigits:3});
 function eur0(n){ return isFinite(n) ? nf0.format(Math.round(n)) + NB + '€' : '—'; }
 function eur2(n){ return isFinite(n) ? nf2.format(n) + NB + '€' : '—'; }
@@ -411,7 +589,9 @@ function pct(n){ return isFinite(n) ? nfp.format(n) + NB + '%' : '—'; }
 function signed(n){ return (n >= 0 ? '+' : MINUS) + eur0(Math.abs(n)); }
 
 /* ---------- estado ---------- */
-function newVinc(name, bonus, coste){ return {id: nid('v'), name: name, bonus: bonus, coste: coste, on: true}; }
+function newVinc(name, bonus, coste, link){ return {id: nid('v'), name: name, bonus: bonus, coste: coste, on: true, link: link || null}; }
+function defaultCompra(){ return {tipo: 'nueva', iva: 10, ajd: 0.75, itp: 6, otros: 0}; }
+function defaultSeguros(){ return [{id: 'sg-hogar', name: 'Seguro de hogar', precio: 200}, {id: 'sg-vida', name: 'Seguro de vida', precio: 280}]; }
 function newOffer(slot, name){
   return {id: nid('o'), slot: slot, name: name, tipo: 'fija', years: 25, tinFijo: 3, anosFijo: 10, dif: 0.8,
           vinc: [], apertura: 0, otros: 0, amortPct: 0, g: Object.assign({}, GDEF), open: true, ex: false};
@@ -419,24 +599,31 @@ function newOffer(slot, name){
 function exampleState(){
   var a = newOffer(0, 'Oferta A (ejemplo)');
   a.tipo = 'fija'; a.years = 25; a.tinFijo = 3.1; a.ex = true;
-  a.vinc = [newVinc('Nómina', 0.30, 0), newVinc('Seguro de hogar', 0.20, 180), newVinc('Seguro de vida', 0.25, 260)];
+  a.vinc = [newVinc('Nómina', 0.30, 0), newVinc('Seguro de hogar', 0.20, 220, 'sg-hogar'), newVinc('Seguro de vida', 0.25, 320, 'sg-vida')];
   a.g.tasacion = 400;
   var b = newOffer(1, 'Oferta B (ejemplo)');
   b.tipo = 'variable'; b.years = 25; b.dif = 0.89; b.apertura = 0.25; b.ex = true; b.open = false;
-  b.vinc = [newVinc('Nómina', 0.15, 0), newVinc('Seguro de hogar', 0.10, 180)];
+  b.vinc = [newVinc('Nómina', 0.15, 0), newVinc('Seguro de hogar', 0.10, 230, 'sg-hogar')];
   b.g.tasacion = 400;
   var c = newOffer(2, 'Oferta C (ejemplo)');
   c.tipo = 'mixta'; c.years = 30; c.tinFijo = 2.45; c.anosFijo = 10; c.dif = 0.99; c.ex = true; c.open = false;
   c.vinc = [newVinc('Nómina', 0.20, 0), newVinc('Seguro de vida', 0.30, 300), newVinc('Plan de pensiones', 0.10, 300)];
   c.g.tasacion = 400;
-  return {precio: 300000, financiar: 240000, euribor: 2.5, offers: [a, b, c]};
+  return {precio: 300000, financiar: 240000, euribor: 2.5, ingresos: 4000, seguros: defaultSeguros(), compra: defaultCompra(), prepay: {amount: 6000, repeat: 'anual', from: 1, mode: 'plazo', rent: 4}, offers: [a, b, c]};
 }
 function sanitize(s){
   var out = {precio: num(s.precio), financiar: num(s.financiar), euribor: isFinite(parseFloat(s.euribor)) ? num(s.euribor) : 2.5, offers: []};
+  out.ingresos = num(s.ingresos);
+  out.compra = Object.assign(defaultCompra(), s.compra || {});
+  if(out.compra.tipo !== 'segunda') out.compra.tipo = 'nueva';
+  out.prepay = Object.assign({amount: 0, repeat: 'anual', from: 1, mode: 'plazo', rent: 4}, s.prepay || {});
+  if(out.prepay.repeat !== 'unica') out.prepay.repeat = 'anual';
+  if(out.prepay.mode !== 'cuota') out.prepay.mode = 'plazo';
+  out.seguros = Array.isArray(s.seguros) ? s.seguros.slice(0, 6).map(function(x){ return {id: x.id || nid('sg'), name: String(x.name || 'Seguro'), precio: num(x.precio)}; }) : [];
   (s.offers || []).slice(0, 8).forEach(function(o, i){
     var m = Object.assign(newOffer(i, 'Oferta'), o);
     m.g = Object.assign({}, GDEF, o.g || {});
-    m.vinc = (o.vinc || []).map(function(v){ return Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true}, v); });
+    m.vinc = (o.vinc || []).map(function(v){ var w = Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true, link: null}, v); if(w.link && !out.seguros.some(function(x){ return x.id === w.link; })) w.link = null; return w; });
     m.slot = (Number.isInteger(o.slot) && o.slot >= 0 && o.slot < 8) ? o.slot : i;
     if(!TIPOS[m.tipo]) m.tipo = 'fija';
     out.offers.push(m);
@@ -454,7 +641,8 @@ function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e
 
 var state = load() || sanitize(exampleState());
 var results = {};
-var view = {A: false, B: false};
+var view = {A: false, B: false, C: false};
+var sweepData = null;
 
 function findOffer(id){ for(var i = 0; i < state.offers.length; i++) if(state.offers[i].id === id) return state.offers[i]; return null; }
 function validResults(){ return state.offers.map(function(o){ return results[o.id]; }).filter(Boolean); }
@@ -470,6 +658,9 @@ function gField(o, f, label){
 }
 function vincRowHtml(o, v){
   var base = ' data-oid="' + o.id + '" data-vid="' + v.id + '"';
+  var linked = !!v.link && state.seguros.some(function(x){ return x.id === v.link; });
+  var linkSel = state.seguros.length ? '<label class="field"><span class="lbl">Sustituye a un seguro que necesitarías igualmente</span><span class="inp"><select' + base + ' data-vf="link" aria-label="Seguro que sustituye"><option value="">No, es un extra</option>' +
+    state.seguros.map(function(x){ return '<option value="' + esc(x.id) + '"' + (x.id === v.link ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></span></label>' : '';
   return '<div class="vrow" data-vrow="' + v.id + '">' +
     '<div class="vtop">' +
       '<input type="checkbox" class="vcb" aria-label="Incluir esta vinculación"' + (v.on ? ' checked' : '') + base + ' data-vf="on">' +
@@ -478,8 +669,9 @@ function vincRowHtml(o, v){
     '</div>' +
     '<div class="grid2">' +
       '<label class="field"><span class="lbl">Baja el TIN en</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.bonus) + '"' + base + ' data-vf="bonus"><span class="unit">puntos</span></span></label>' +
-      '<label class="field"><span class="lbl">Sobrecoste al año</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.coste) + '"' + base + ' data-vf="coste"><span class="unit">€</span></span></label>' +
+      '<label class="field"><span class="lbl">' + (linked ? 'Prima anual en el banco' : 'Sobrecoste al año') + '</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.coste) + '"' + base + ' data-vf="coste"><span class="unit">€</span></span></label>' +
     '</div>' +
+    linkSel +
     '<div class="vr" id="vr-' + v.id + '" data-verdict="neutral"><span class="vr-ico" aria-hidden="true"></span><span class="vr-label"></span><span class="vr-text"></span></div>' +
   '</div>';
 }
@@ -511,7 +703,7 @@ function offerHtml(o){
       '</div>' +
       '<div class="bsec">' +
         '<h4 class="bh">Vinculaciones</h4>' +
-        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías (por ejemplo, la diferencia de prima de un seguro). Desmarca las que no vayas a contratar.</p>' +
+        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías. Si es un seguro que necesitarías igualmente, indícalo y anota la prima completa del banco: se descuenta lo que pagarías fuera. Desmarca las que no vayas a contratar.</p>' +
         '<div class="vlist" id="vl-' + id + '">' + vincListHtml(o) + '</div>' +
         '<div class="chips">' + chips + '</div>' +
       '</div>' +
@@ -522,7 +714,7 @@ function offerHtml(o){
           numField(o, 'otros', 'Otras comisiones o gastos', '€') +
           numField(o, 'amortPct', 'Amortización anticipada', '%') +
         '</div>' +
-        '<p class="hint">La comisión de amortización anticipada es solo informativa y no entra en el coste total.</p>' +
+        '<p class="hint">Se usa en la simulación de amortización anticipada y no entra en el coste total.</p>' +
       '</div>' +
       '<div class="bsec">' +
         '<h4 class="bh">Gastos de formalización a tu cargo</h4>' +
@@ -555,8 +747,45 @@ function computeAll(){
   state.offers.forEach(function(o){
     try{ results[o.id] = evaluate(o, state); }catch(e){ results[o.id] = null; }
   });
+  var rs = validResults(), plan = prepayPlan(), cc = compraCosts();
+  rs.forEach(function(r){
+    r.cuotaMax = Math.max(r.cuota0, r.cuota1 || 0);
+    r.ratio = state.ingresos > 0 ? r.cuotaMax / state.ingresos * 100 : null;
+    r.pp = plan ? prepayResult(r.o, state, plan, state.prepay.rent) : null;
+    r.firma = cc.entrada + cc.imp + cc.otros + r.upfront;
+    r.neg = null;
+  });
+  if(rs.length > 1){
+    var best = bestOf(rs, 'costeAll').r;
+    rs.forEach(function(r){ r.neg = (r === best) ? {best: true} : negotiate(r.o, state, best.costeAll); });
+  }
+  sweepData = (rs.length && state.financiar > 0) ? sweepEuribor(rs.map(function(r){ return r.o; }), state) : null;
 }
+function prepayPlan(){
+  var pp = state.prepay;
+  if(!(num(pp.amount) > 0) || !(state.financiar > 0)) return null;
+  return {amount: num(pp.amount), repeat: pp.repeat === 'anual', from: num(pp.from), mode: pp.mode};
+}
+function compraCosts(){
+  var p = state.precio, c = state.compra;
+  var imp = c.tipo === 'nueva' ? p * (num(c.iva) + num(c.ajd)) / 100 : p * num(c.itp) / 100;
+  return {entrada: Math.max(0, p - state.financiar), imp: imp, otros: num(c.otros)};
+}
+function fmtMonths(m){
+  var y = Math.floor(m / 12), mo = m % 12, out = [];
+  if(y) out.push(y + (y === 1 ? ' año' : ' años'));
+  if(mo) out.push(mo + (mo === 1 ? ' mes' : ' meses'));
+  return out.join(' ') || '0 meses';
+}
+function getPath(k){ var o = state; k.split('.').forEach(function(q){ o = o ? o[q] : undefined; }); return o; }
+function setPath(k, v){ var p = k.split('.'), o = state; for(var i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; }
+function applyCompraVis(){ document.querySelectorAll('[data-tipo]').forEach(function(el){ el.hidden = el.getAttribute('data-tipo') !== state.compra.tipo; }); }
 function updateGlobalHints(){
+  var ch = $('compraHint');
+  if(state.precio > 0){
+    var cc = compraCosts();
+    ch.textContent = 'Impuestos y gastos de la compra: ' + eur0(cc.imp + cc.otros) + '. Entrada más impuestos y gastos: ' + eur0(cc.entrada + cc.imp + cc.otros) + ', sin contar los gastos de la hipoteca.';
+  } else ch.textContent = '';
   var h = $('ltvHint');
   var p = state.precio, f = state.financiar;
   if(f > 0 && p > 0 && f > p){ h.textContent = 'El importe a financiar supera el precio de la vivienda.'; h.setAttribute('data-state', 'warn'); }
@@ -571,7 +800,7 @@ function updateOfferHeads(){
     nm.textContent = nameOf(o);
     $('hm-' + o.id).textContent = TIPOS[o.tipo] + ' · ' + attr(o.years) + ' años' + (r ? ' · TIN ' + pct(r.tin0) : '');
     $('hc-' + o.id).textContent = r ? eur2(r.cuota0) : '—';
-    $('ht-' + o.id).textContent = r ? eur0(r.costeTotal) : '—';
+    $('ht-' + o.id).textContent = r ? eur0(r.costeAll) : '—';
     var vh = $('vh-' + o.id);
     if(vh){
       var base = state.euribor + num(o.dif);
@@ -610,17 +839,17 @@ function renderTiles(){
     if(!best) return '';
     return '<div class="tile"><div class="k">' + label + '</div><div class="v">' + fmt(best.v) + '</div><div class="s"><span class="sw sm" style="background:' + colorOf(best.r.o) + '"></span><span>' + esc(nameOf(best.r.o)) + (extra || '') + '</span></div></div>';
   }
-  var bc = bestOf(rs, 'costeTotal');
-  var worst = rs.reduce(function(a, r){ return Math.max(a, r.costeTotal); }, 0);
+  var bc = bestOf(rs, 'costeAll');
+  var worst = rs.reduce(function(a, r){ return Math.max(a, r.costeAll); }, 0);
   var extra = rs.length > 1 ? ' · ' + eur0(worst - bc.v) + ' menos que la más cara' : '';
-  host.innerHTML = tile('Menor coste total', bc, eur0, extra) + tile('Menor cuota inicial', bestOf(rs, 'cuota0'), eur2) + tile('Menor TAE real', bestOf(rs, 'taeReal'), pct);
+  host.innerHTML = tile('Menor coste total' + (state.seguros.length ? ' (con seguros)' : ''), bc, eur0, extra) + tile('Menor cuota inicial', bestOf(rs, 'cuota0'), eur2) + tile('Menor TAE real', bestOf(rs, 'taeReal'), pct);
 }
 
 function renderTable(){
   var rs = validResults();
   var tbl = $('cmp');
   if(!rs.length){ tbl.innerHTML = '<tbody><tr><td class="empty" style="text-align:left">Añade una oferta e indica el importe a financiar para ver la comparativa.</td></tr></tbody>'; return; }
-  var bc = bestOf(rs, 'costeTotal');
+  var bc = bestOf(rs, 'costeAll');
   var head = '<thead><tr><th scope="col"></th>' + rs.map(function(r){
     return '<th scope="col"><div class="hn"><span class="sw sm" style="background:' + colorOf(r.o) + '"></span><span>' + esc(nameOf(r.o)) + '</span></div>' + ((rs.length > 1 && r === bc.r) ? '<span class="badge">✓ Más barata</span>' : '') + '</th>';
   }).join('') + '</tr></thead>';
@@ -635,25 +864,83 @@ function renderTable(){
     {l: 'Cuota tras el tramo fijo', t: function(r){ return r.cuota1 === null ? '—' : eur2(r.cuota1); }},
     {g: 'Coste total'},
     {l: 'Intereses', t: function(r){ return eur0(r.interest); }},
-    {l: 'Vinculaciones', t: function(r){ return eur0(r.vincTotal); }},
+    {l: 'Vinculaciones (primas y extras)', t: function(r){ return eur0(r.vincTotal); }},
     {l: 'Comisiones', t: function(r){ return eur0(r.aperturaTotal); }},
     {l: 'Gastos de formalización', t: function(r){ return eur0(r.formal); }},
-    {l: 'Coste total', t: function(r){ return eur0(r.costeTotal); }, k: 'costeTotal', best: true, strong: true},
+    {l: 'Coste total de la hipoteca', t: function(r){ return eur0(r.costeTotal); }, k: 'costeTotal', best: true, strong: true},
     {l: 'Total a pagar (capital + coste)', t: function(r){ return eur0(r.totalPagar); }},
     {g: 'TAE'},
     {l: 'TAE del préstamo', t: function(r){ return pct(r.taePrestamo); }},
     {l: 'TAE real (con todo)', t: function(r){ return pct(r.taeReal); }, k: 'taeReal', best: true},
     {g: 'Efecto de las vinculaciones'},
     {l: 'Ahorro en intereses', t: function(r){ return eur0(r.saved); }},
-    {l: 'Coste de las vinculaciones', t: function(r){ return eur0(r.vincTotal); }},
+    {l: 'Sobrecoste real de las vinculaciones', t: function(r){ return eur0(r.vincExtra); }},
     {l: 'Balance neto', t: function(r){ return signed(r.vincNet); }}
   ];
+  function ins(after, items){ for(var q = 0; q < rows.length; q++) if(rows[q].l === after){ rows.splice.apply(rows, [q + 1, 0].concat(items)); return; } }
+  if(state.ingresos > 0){
+    ins('Cuota tras el tramo fijo', [{l: 'Cuota máxima sobre ingresos', t: function(r){
+      var v = r.ratio; return nf1.format(v) + NB + '% \u00b7 ' + (v <= 30 ? 'Holgado' : (v <= 35 ? 'Ajustado' : 'Alto'));
+    }, cls: function(r){ return r.ratio > 35 ? 'warn' : ''; }}]);
+  }
+  var mid = [];
+  if(state.precio > 0){
+    var cc = compraCosts();
+    mid.push({g: 'Dinero necesario al firmar'});
+    mid.push({l: 'Entrada', t: function(){ return eur0(cc.entrada); }});
+    mid.push({l: 'Impuestos de la compra', t: function(){ return eur0(cc.imp); }});
+    mid.push({l: 'Notaría, registro y gestoría', t: function(){ return eur0(cc.otros); }});
+    mid.push({l: 'Gastos y comisiones de la hipoteca', t: function(r){ return eur0(r.upfront); }});
+    mid.push({l: 'Total al firmar', t: function(r){ return eur0(r.firma); }, k: 'firma', best: true, strong: true});
+  }
+  if(rs.length > 1){
+    mid.push({g: 'Para negociar con el banco'});
+    mid.push({l: 'Rebaja de TIN para igualar a la más barata', t: function(r){
+      if(!r.neg) return '—'; if(r.neg.best) return 'Es la más barata'; if(r.neg.unreachable) return 'No alcanzable';
+      return MINUS + nfp.format(r.neg.d) + NB + 'puntos';
+    }});
+    mid.push({l: 'Condición que deberías pedir', t: function(r){
+      if(!r.neg || r.neg.best || r.neg.unreachable) return '—';
+      var t = r.o.tipo;
+      if(t === 'fija') return 'TIN ' + pct(r.neg.tin);
+      if(t === 'variable') return 'Dif. ' + nfp.format(r.neg.dif) + NB + 'puntos';
+      return 'TIN ' + pct(r.neg.tin) + ' \u00b7 dif. ' + nfp.format(r.neg.dif);
+    }});
+  }
+  if(rs[0].pp){
+    mid.push({g: 'Amortización anticipada'});
+    mid.push({l: 'Total aportado', t: function(r){ return eur0(r.pp.aportado); }});
+    mid.push({l: 'Plazo resultante', t: function(r){ return fmtMonths(r.pp.newMonths) + (r.pp.monthsSaved > 0 ? ' (' + MINUS + fmtMonths(r.pp.monthsSaved) + ')' : ''); }});
+    mid.push({l: 'Cuota tras amortizar', t: function(r){ return eur2(r.pp.cNew); }});
+    mid.push({l: 'Intereses ahorrados', t: function(r){ return eur0(r.pp.intSaved); }});
+    mid.push({l: 'Comisión de amortización', t: function(r){ return eur0(r.pp.comm); }});
+    mid.push({l: 'Ahorro neto', t: function(r){ return signed(r.pp.net); }});
+    mid.push({l: 'Si amortizas: ahorro acumulado al final', t: function(r){ return eur0(r.pp.WA); }});
+    mid.push({l: 'Si inviertes: capital acumulado al final', t: function(r){ return eur0(r.pp.WB); }});
+    mid.push({l: 'Sale mejor', t: function(r){ var d = r.pp.WA - r.pp.WB; return (d >= 0 ? 'Amortizar' : 'Invertir') + ' (' + signed(Math.abs(d)).replace('+', '+') + ')'; }, strong: true});
+  }
+  if(mid.length){
+    var gi = -1;
+    for(var q2 = 0; q2 < rows.length; q2++) if(rows[q2].g === 'Seguros necesarios'){ gi = q2; break; }
+    if(gi < 0) rows = rows.concat(mid); else rows.splice.apply(rows, [gi, 0].concat(mid));
+  }
+  var sg = rs[0].extItems;
+  if(sg.length){
+    rows.push({g: 'Seguros necesarios'});
+    sg.forEach(function(it, ix){
+      rows.push({l: it.name, t: function(r){ var x = r.extItems[ix]; return x.covered ? 'Incluido en vinculación' : eur0(x.cost); }});
+    });
+    rows.push({l: 'Seguros fuera de la hipoteca', t: function(r){ return eur0(r.extTotal); }});
+    rows.push({l: 'Balance neto menos seguros externos', t: function(r){ return signed(r.vincNet - r.extTotal); }});
+    rows.push({l: 'Total con seguros necesarios', t: function(r){ return eur0(r.costeAll); }, k: 'costeAll', best: true, strong: true});
+  }
   var body = '<tbody>' + rows.map(function(row){
     if(row.g) return '<tr class="grp"><th colspan="' + (rs.length + 1) + '">' + row.g + '</th></tr>';
     var best = row.best ? bestOf(rs, row.k) : null;
     return '<tr' + (row.strong ? ' class="strong"' : '') + '><td class="lbl-c">' + row.l + '</td>' + rs.map(function(r){
       var isBest = best && rs.length > 1 && r[row.k] === best.v;
-      return '<td' + (isBest ? ' class="best"' : '') + '>' + row.t(r) + '</td>';
+      var cl = isBest ? 'best' : (row.cls ? row.cls(r) : '');
+      return '<td' + (cl ? ' class="' + cl + '"' : '') + '>' + row.t(r) + '</td>';
     }).join('') + '</tr>';
   }).join('') + '</tbody>';
   tbl.innerHTML = head + body;
@@ -682,26 +969,26 @@ function hideTip(){ $('tip').hidden = true; }
 
 function renderChartA(){
   var host = $('chartA-body');
-  var rs = validResults().slice().sort(function(a, b){ return a.costeTotal - b.costeTotal; });
+  var rs = validResults().slice().sort(function(a, b){ return a.costeAll - b.costeAll; });
   if(!rs.length){ host.innerHTML = '<p class="empty" style="padding:0">Añade el importe a financiar y al menos una oferta para ver el gráfico.</p>'; return; }
   if(view.A){
-    host.innerHTML = '<div class="tbl-wrap"><table class="mini"><thead><tr><th>Oferta</th><th>Intereses</th><th>Vinculaciones</th><th>Comisiones y gastos</th><th>Coste total</th></tr></thead><tbody>' +
-      rs.map(function(r){ return '<tr><td>' + esc(nameOf(r.o)) + '</td><td>' + eur0(r.interest) + '</td><td>' + eur0(r.vincTotal) + '</td><td>' + eur0(r.upfront) + '</td><td><strong>' + eur0(r.costeTotal) + '</strong></td></tr>'; }).join('') + '</tbody></table></div>';
+    host.innerHTML = '<div class="tbl-wrap"><table class="mini"><thead><tr><th>Oferta</th><th>Intereses</th><th>Vinculaciones</th><th>Comisiones y gastos</th><th>Seguros externos</th><th>Total</th></tr></thead><tbody>' +
+      rs.map(function(r){ return '<tr><td>' + esc(nameOf(r.o)) + '</td><td>' + eur0(r.interest) + '</td><td>' + eur0(r.vincTotal) + '</td><td>' + eur0(r.upfront) + '</td><td>' + eur0(r.extTotal) + '</td><td><strong>' + eur0(r.costeAll) + '</strong></td></tr>'; }).join('') + '</tbody></table></div>';
     return;
   }
-  var max = rs[rs.length - 1].costeTotal || 1, best = rs[0].costeTotal;
+  var max = rs[rs.length - 1].costeAll || 1, best = rs[0].costeAll;
   host.innerHTML = rs.map(function(r, i){
-    var w = Math.max(1, r.costeTotal / max * 70).toFixed(1);
+    var w = Math.max(1, r.costeAll / max * 70).toFixed(1);
     return '<div class="barrow" tabindex="0" data-i="' + i + '">' +
-      '<div class="br-name"><span class="sw sm" style="background:' + colorOf(r.o) + '"></span><span class="nm">' + esc(nameOf(r.o)) + '</span><span class="dlt">' + (i === 0 ? (rs.length > 1 ? 'Más barata' : '') : signed(r.costeTotal - best) + ' sobre la más barata') + '</span></div>' +
-      '<div class="track"><div class="bar" style="flex:0 0 ' + w + '%;background:' + colorOf(r.o) + '"></div><span class="val">' + eur0(r.costeTotal) + '</span></div></div>';
+      '<div class="br-name"><span class="sw sm" style="background:' + colorOf(r.o) + '"></span><span class="nm">' + esc(nameOf(r.o)) + '</span><span class="dlt">' + (i === 0 ? (rs.length > 1 ? 'Más barata' : '') : signed(r.costeAll - best) + ' sobre la más barata') + '</span></div>' +
+      '<div class="track"><div class="bar" style="flex:0 0 ' + w + '%;background:' + colorOf(r.o) + '"></div><span class="val">' + eur0(r.costeAll) + '</span></div></div>';
   }).join('');
   host.querySelectorAll('.barrow').forEach(function(el){
     var r = rs[parseInt(el.getAttribute('data-i'), 10)];
     var rows = [
       {v: eur0(r.interest), n: 'Intereses'}, {v: eur0(r.vincTotal), n: 'Vinculaciones'},
       {v: eur0(r.aperturaTotal), n: 'Comisiones'}, {v: eur0(r.formal), n: 'Gastos de formalización'},
-      {v: eur0(r.costeTotal), n: 'Coste total'}
+      {v: eur0(r.extTotal), n: 'Seguros fuera de la hipoteca'}, {v: eur0(r.costeAll), n: 'Total'}
     ];
     var title = nameOf(r.o);
     el.addEventListener('pointermove', function(e){ showTip(e.clientX, e.clientY, title, rows); });
@@ -805,7 +1092,108 @@ function renderChartB(){
   });
   svg.addEventListener('blur', hideAll);
 }
-function renderCharts(){ renderChartA(); renderChartB(); }
+function renderChartC(){
+  var host = $('chartC-body'), leg = $('chartC-legend'), txt = $('chartC-text');
+  var rs = validResults();
+  leg.textContent = ''; txt.textContent = ''; txt.hidden = true;
+  if(!rs.length || !sweepData){ host.innerHTML = '<p class="empty" style="padding:0">Añade el importe a financiar y al menos una oferta para ver el gráfico.</p>'; return; }
+  rs.forEach(function(r){
+    var sp = document.createElement('span'); sp.className = 'legend-item';
+    var k = document.createElement('span'); k.className = 'lk'; k.style.background = colorOf(r.o);
+    var t = document.createElement('span'); t.textContent = nameOf(r.o);
+    sp.appendChild(k); sp.appendChild(t); leg.appendChild(sp);
+  });
+  var es = sweepData.es, N = es.length;
+  function ev(r, i){ return sweepData.costs[r.o.id][i]; }
+  if(rs.length > 1){
+    var segs = [], prev = null;
+    for(var i = 0; i < N; i++){
+      var bi = -1, bv = Infinity;
+      rs.forEach(function(r, j){ var v = ev(r, i); if(isFinite(v) && v < bv){ bv = v; bi = j; } });
+      if(bi !== prev){ segs.push({from: es[i], j: bi}); prev = bi; }
+    }
+    function e2(x){ return nfp.format(x) + NB + '%'; }
+    if(segs.length === 1) txt.textContent = 'La más barata es «' + nameOf(rs[segs[0].j].o) + '» con cualquier Euríbor entre ' + e2(es[0]) + ' y ' + e2(es[N - 1]) + '.';
+    else txt.textContent = 'Según el Euríbor: ' + segs.map(function(sg, q){
+      var nm = '«' + nameOf(rs[sg.j].o) + '»';
+      if(q === 0) return 'hasta ' + e2(segs[1].from) + ', ' + nm;
+      if(q === segs.length - 1) return 'desde ' + e2(sg.from) + ', ' + nm;
+      return 'de ' + e2(sg.from) + ' a ' + e2(segs[q + 1].from) + ', ' + nm;
+    }).join('; ') + '.';
+    txt.hidden = false;
+  }
+  if(view.C){
+    var idx = []; for(var z = 5; z < N; z += 5) idx.push(z);
+    host.innerHTML = '<div class="tbl-wrap"><table class="mini"><thead><tr><th>Euríbor</th>' + rs.map(function(r){ return '<th>' + esc(nameOf(r.o)) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      idx.map(function(z2){ return '<tr><td>' + nfp.format(es[z2]) + NB + '%</td>' + rs.map(function(r){ return '<td>' + eur0(ev(r, z2)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+    return;
+  }
+  var W = Math.max(300, Math.floor(host.clientWidth || 600)), H = 270;
+  var m = {l: 58, r: 16, t: 22, b: 32};
+  var iw = W - m.l - m.r, ih = H - m.t - m.b;
+  var lo = Infinity, hi = -Infinity;
+  rs.forEach(function(r){ for(var i2 = 0; i2 < N; i2++){ var v = ev(r, i2); if(isFinite(v)){ if(v < lo) lo = v; if(v > hi) hi = v; } } });
+  var step = niceStep(((hi - lo) || hi * 0.1 || 1) / 4);
+  var yMin = Math.floor(lo / step) * step, yMax = Math.ceil(hi / step) * step;
+  if(yMax === yMin) yMax = yMin + step;
+  var xMin = es[0], xMax = es[N - 1];
+  function X(e){ return m.l + iw * (e - xMin) / (xMax - xMin); }
+  function Y(v){ return m.t + ih * (1 - (v - yMin) / (yMax - yMin)); }
+  var s = '<svg class="chart-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" tabindex="0" role="img" aria-label="Gráfico de líneas del coste total de cada oferta según el Euríbor">';
+  for(var v2 = yMin; v2 <= yMax + 1e-6; v2 += step){
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v2).toFixed(1) + '" y2="' + Y(v2).toFixed(1) + '" style="stroke:var(--grid)" stroke-width="1"/>';
+    s += '<text x="' + (m.l - 8) + '" y="' + (Y(v2) + 4).toFixed(1) + '" text-anchor="end">' + nf0.format(v2) + '</text>';
+  }
+  for(var x = 0; x <= xMax + 1e-6; x += 1){
+    s += '<text x="' + X(x).toFixed(1) + '" y="' + (H - 14) + '" text-anchor="middle">' + x + '</text>';
+  }
+  s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">Euríbor (%)</text>';
+  s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + (m.t + ih) + '" y2="' + (m.t + ih) + '" style="stroke:var(--axis)" stroke-width="1"/>';
+  if(state.euribor >= xMin && state.euribor <= xMax){
+    var ex = X(state.euribor).toFixed(1);
+    s += '<line x1="' + ex + '" x2="' + ex + '" y1="' + m.t + '" y2="' + (m.t + ih) + '" style="stroke:var(--axis)" stroke-width="1"/>';
+    s += '<text x="' + ex + '" y="' + (m.t - 6) + '" text-anchor="' + (X(state.euribor) > W - 70 ? 'end' : 'middle') + '">Tu Euríbor</text>';
+  }
+  rs.forEach(function(r){
+    var pts = [];
+    for(var i3 = 0; i3 < N; i3++){ var v3 = ev(r, i3); if(isFinite(v3)) pts.push(X(es[i3]).toFixed(1) + ',' + Y(v3).toFixed(1)); }
+    s += '<polyline fill="none" style="stroke:' + colorOf(r.o) + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(' ') + '"/>';
+  });
+  s += '<line id="xhc" y1="' + m.t + '" y2="' + (m.t + ih) + '" style="stroke:var(--axis)" stroke-width="1" visibility="hidden"/>';
+  rs.forEach(function(r, i4){ s += '<circle class="hdc" r="5" style="fill:' + colorOf(r.o) + ';stroke:var(--surface)" stroke-width="2" visibility="hidden"/>'; });
+  s += '<rect id="hitc" x="' + m.l + '" y="' + m.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/></svg>';
+  host.innerHTML = s;
+  var svg = host.querySelector('svg'), xh = svg.querySelector('#xhc'), hit = svg.querySelector('#hitc');
+  var dots = svg.querySelectorAll('.hdc'), cur = null;
+  function showIdx(i5, cx, cy){
+    i5 = Math.max(0, Math.min(N - 1, i5)); cur = i5;
+    xh.setAttribute('x1', X(es[i5])); xh.setAttribute('x2', X(es[i5])); xh.setAttribute('visibility', 'visible');
+    var rows2 = [];
+    rs.forEach(function(r, j){
+      var vv = ev(r, i5), d = dots[j];
+      if(isFinite(vv)){ d.setAttribute('cx', X(es[i5])); d.setAttribute('cy', Y(vv)); d.setAttribute('visibility', 'visible'); rows2.push({color: colorOf(r.o), v: eur0(vv), n: nameOf(r.o)}); }
+      else d.setAttribute('visibility', 'hidden');
+    });
+    showTip(cx, cy, 'Euríbor ' + nfp.format(es[i5]) + ' %', rows2);
+  }
+  function hideAll(){ xh.setAttribute('visibility', 'hidden'); dots.forEach(function(d){ d.setAttribute('visibility', 'hidden'); }); hideTip(); cur = null; }
+  function fromEvent(e){
+    var b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * (W / b.width);
+    showIdx(Math.round((px - m.l) / iw * (N - 1)), e.clientX, e.clientY);
+  }
+  hit.addEventListener('pointermove', fromEvent);
+  hit.addEventListener('pointerdown', fromEvent);
+  hit.addEventListener('pointerleave', hideAll);
+  svg.addEventListener('keydown', function(e){
+    if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    var b = svg.getBoundingClientRect();
+    var next = Math.max(0, Math.min(N - 1, (cur === null ? 0 : cur) + (e.key === 'ArrowRight' ? 5 : -5)));
+    showIdx(next, b.left + X(es[next]) * (b.width / W), b.top + m.t + 10);
+  });
+  svg.addEventListener('blur', hideAll);
+}
+function renderCharts(){ renderChartA(); renderChartB(); renderChartC(); }
 
 /* ---------- actualización general ---------- */
 function updateAll(){
@@ -821,10 +1209,47 @@ function updateAll(){
 }
 function structural(){ renderOffers(); updateAll(); }
 
+/* ---------- seguros necesarios ---------- */
+function renderSeguros(){
+  $('segList').innerHTML = state.seguros.map(function(x){
+    return '<div class="srow">' +
+      '<span class="inp"><input type="text" aria-label="Nombre del seguro" value="' + esc(x.name) + '" data-sid="' + x.id + '" data-sf="name"></span>' +
+      '<span class="inp"><input type="number" inputmode="decimal" step="any" min="0" aria-label="Precio anual" value="' + attr(x.precio) + '" data-sid="' + x.id + '" data-sf="precio"><span class="unit">€/año</span></span>' +
+      '<button type="button" class="x" data-sdel="' + x.id + '" aria-label="Quitar seguro">\u00d7</button></div>';
+  }).join('');
+}
+$('segList').addEventListener('input', function(e){
+  var sid = e.target.getAttribute('data-sid'); if(!sid) return;
+  var x = state.seguros.filter(function(q){ return q.id === sid; })[0]; if(!x) return;
+  if(e.target.getAttribute('data-sf') === 'name'){ x.name = e.target.value; renderOffers(); }
+  else x.precio = num(e.target.value);
+  updateAll();
+});
+$('segList').addEventListener('click', function(e){
+  var b = e.target.closest('[data-sdel]'); if(!b) return;
+  var sid = b.getAttribute('data-sdel');
+  state.seguros = state.seguros.filter(function(q){ return q.id !== sid; });
+  state.offers.forEach(function(o){ o.vinc.forEach(function(v){ if(v.link === sid) v.link = null; }); });
+  renderSeguros(); renderOffers(); updateAll();
+});
+$('addSeg').addEventListener('click', function(){
+  if(state.seguros.length >= 6){ toast('El máximo es de 6 seguros.'); return; }
+  state.seguros.push({id: nid('sg'), name: 'Nuevo seguro', precio: 0});
+  renderSeguros(); renderOffers(); updateAll();
+});
+
 /* ---------- eventos ---------- */
 function syncGlobalInputs(){
   $('precio').value = attr(state.precio); $('financiar').value = attr(state.financiar); $('euribor').value = attr(state.euribor).replace('.', ',');
+  document.querySelectorAll('.gin').forEach(function(el){ el.value = attr(getPath(el.getAttribute('data-k'))); });
+  applyCompraVis();
 }
+document.querySelectorAll('.gin').forEach(function(el){
+  el.addEventListener('input', function(){
+    var v = el.tagName === 'SELECT' ? el.value : num(el.value);
+    setPath(el.getAttribute('data-k'), v); applyCompraVis(); updateAll();
+  });
+});
 ['precio', 'financiar', 'euribor'].forEach(function(f){
   $(f).addEventListener('input', function(){ state[f] = num($(f).value); updateAll(); });
 });
@@ -846,7 +1271,8 @@ $('offers').addEventListener('input', function(e){
   else if(vid){
     var v = o.vinc.filter(function(x){ return x.id === vid; })[0]; if(!v) return;
     var vf = t.getAttribute('data-vf');
-    if(vf === 'on') v.on = t.checked;
+    if(vf === 'link'){ v.link = t.value || null; $('vl-' + oid).innerHTML = vincListHtml(o); }
+    else if(vf === 'on') v.on = t.checked;
     else if(vf === 'name') v.name = t.value;
     else v[vf] = num(t.value);
   }
@@ -873,7 +1299,8 @@ $('offers').addEventListener('click', function(e){
     o.tipo = b.getAttribute('data-v'); applyTipo(o); updateAll();
   } else if(act === 'addvinc'){
     var name = b.getAttribute('data-name');
-    o.vinc.push(newVinc(name === 'Otra' ? 'Otra vinculación' : name, 0.1, 0));
+    var ms = state.seguros.filter(function(x){ return x.name.trim().toLowerCase() === name.toLowerCase(); })[0];
+    o.vinc.push(newVinc(name === 'Otra' ? 'Otra vinculación' : name, 0.1, ms ? num(ms.precio) : 0, ms ? ms.id : null));
     $('vl-' + oid).innerHTML = vincListHtml(o); updateAll();
   } else if(act === 'delvinc'){
     var vid = b.getAttribute('data-vid');
@@ -917,7 +1344,7 @@ $('resetExamples').addEventListener('click', function(){
   arm($('resetExamples'), '¿Reemplazar tus datos? Pulsa de nuevo', function(){
     state = sanitize(exampleState());
     $('resetExamples').removeAttribute('data-armed'); $('resetExamples').textContent = 'Volver a los datos de ejemplo';
-    syncGlobalInputs(); structural();
+    syncGlobalInputs(); renderSeguros(); structural();
   });
 });
 
@@ -928,6 +1355,46 @@ document.querySelectorAll('[data-toggle]').forEach(function(b){
     b.textContent = view[k] ? 'Ver gráfico' : 'Ver tabla';
     b.setAttribute('aria-pressed', view[k] ? 'true' : 'false');
     hideTip(); renderCharts();
+  });
+});
+
+function backupText(){ return JSON.stringify({app: 'comparador-hipotecas', v: 1, state: state}); }
+function showBackupBox(text){ $('bkBox').hidden = false; $('bkText').value = text || ''; $('bkText').focus(); }
+$('bkExport').addEventListener('click', function(){
+  var txt = backupText();
+  try{
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([txt], {type: 'application/json'}));
+    a.download = 'hipotecas-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    toast('Archivo generado. Si no se descarga, usa «Copiar datos».');
+  }catch(e){ showBackupBox(txt); toast('Copia lista abajo'); }
+});
+$('bkCopy').addEventListener('click', function(){
+  var txt = backupText();
+  try{ navigator.clipboard.writeText(txt).then(function(){ toast('Datos copiados'); }, function(){ showBackupBox(txt); toast('Copia lista abajo'); }); }
+  catch(e){ showBackupBox(txt); toast('Copia lista abajo'); }
+});
+$('bkImport').addEventListener('click', function(){ $('bkFile').click(); });
+$('bkPaste').addEventListener('click', function(){ showBackupBox(''); });
+$('bkFile').addEventListener('change', function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){ showBackupBox(String(rd.result)); toast('Revisa y pulsa «Cargar estos datos»'); };
+  rd.onerror = function(){ toast('No se pudo leer el archivo'); };
+  rd.readAsText(f); this.value = '';
+});
+$('bkLoad').addEventListener('click', function(){
+  var obj;
+  try{ obj = JSON.parse($('bkText').value); }catch(e){ toast('Esos datos no son válidos'); return; }
+  var data = obj && obj.state ? obj.state : obj;
+  if(!data || !Array.isArray(data.offers)){ toast('Esos datos no son válidos'); return; }
+  arm($('bkLoad'), 'Se reemplazarán tus datos. Pulsa de nuevo', function(){
+    state = sanitize(data);
+    $('bkLoad').removeAttribute('data-armed'); $('bkLoad').textContent = 'Cargar estos datos';
+    $('bkBox').hidden = true; $('bkText').value = '';
+    syncGlobalInputs(); renderSeguros(); structural(); toast('Datos cargados');
   });
 });
 
@@ -942,7 +1409,7 @@ $('copyBtn').addEventListener('click', function(){
   var lines = ['Comparativa de hipotecas', 'Precio ' + eur0(state.precio) + ' · Financiado ' + eur0(state.financiar) + ' · Euríbor supuesto ' + nfp.format(state.euribor) + ' %', ''];
   rs.forEach(function(r){
     lines.push(nameOf(r.o) + ' (' + TIPOS[r.o.tipo] + ', ' + attr(r.o.years) + ' años)');
-    lines.push('  TIN aplicado ' + pct(r.tin0) + ' · Cuota inicial ' + eur2(r.cuota0) + ' · Coste total ' + eur0(r.costeTotal) + ' · TAE real ' + pct(r.taeReal));
+    lines.push('  TIN aplicado ' + pct(r.tin0) + ' · Cuota inicial ' + eur2(r.cuota0) + ' · Coste total ' + eur0(r.costeAll) + (state.seguros.length ? ' (con seguros)' : '') + ' · TAE real ' + pct(r.taeReal));
   });
   var text = lines.join('\n');
   try{
@@ -954,11 +1421,12 @@ if('ResizeObserver' in window){
   var lastW = 0;
   new ResizeObserver(function(){
     var w = $('chartB-body').clientWidth;
-    if(w && w !== lastW){ lastW = w; if(!view.B) renderChartB(); }
+    if(w && w !== lastW){ lastW = w; if(!view.B) renderChartB(); if(!view.C) renderChartC(); }
   }).observe($('chartB-body'));
 }
 
 syncGlobalInputs();
+renderSeguros();
 structural();
 })();
 </script>
