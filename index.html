@@ -361,6 +361,19 @@ function pmt(P, rate, n){
   return P * i / (1 - Math.pow(1 + i, -n));
 }
 
+function normTxt(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function resolveSeg(v, seg){
+  if(v.link === 'none') return null;
+  var q;
+  if(v.link){ for(q = 0; q < seg.length; q++) if(seg[q].id === v.link) return seg[q]; }
+  var vn = normTxt(v.name);
+  for(q = 0; q < seg.length; q++){
+    var key = normTxt(seg[q].name).replace(/^seguro (de |del |para )?/, '').trim();
+    if(key.length >= 3 && vn.indexOf(key) >= 0) return seg[q];
+  }
+  return null;
+}
+
 function bonusSum(o, skipId){
   var s = 0;
   for(var k = 0; k < o.vinc.length; k++){
@@ -424,7 +437,7 @@ function evaluate(o, g){
   var sched = amortize(cap, rt.phases, n);
   var noBonus = amortize(cap, phasesFor(o, euribor, 0).phases, n);
   var seg = g.seguros || [];
-  function segOf(v){ if(!v.link) return null; for(var q = 0; q < seg.length; q++) if(seg[q].id === v.link) return seg[q]; return null; }
+  function segOf(v){ return resolveSeg(v, seg); }
   function vm(v){ var a = num(v.anos); return a > 0 ? Math.min(n, Math.round(a * 12)) : n; }
   var vincM = new Float64Array(n), extraM = new Float64Array(n), extM = new Float64Array(n);
   var coveredMonths = {};
@@ -629,7 +642,7 @@ function sanitize(s){
   (s.offers || []).slice(0, 8).forEach(function(o, i){
     var m = Object.assign(newOffer(i, 'Oferta'), o);
     m.g = Object.assign({}, GDEF, o.g || {});
-    m.vinc = (o.vinc || []).map(function(v){ var w = Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true, link: null, anos: 0}, v); if(w.link && !out.seguros.some(function(x){ return x.id === w.link; })) w.link = null; return w; });
+    m.vinc = (o.vinc || []).map(function(v){ var w = Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true, link: null, anos: 0}, v); if(w.link && w.link !== 'none' && !out.seguros.some(function(x){ return x.id === w.link; })) w.link = null; return w; });
     m.slot = (Number.isInteger(o.slot) && o.slot >= 0 && o.slot < 8) ? o.slot : i;
     if(!TIPOS[m.tipo]) m.tipo = 'fija';
     out.offers.push(m);
@@ -664,9 +677,9 @@ function gField(o, f, label){
 }
 function vincRowHtml(o, v){
   var base = ' data-oid="' + o.id + '" data-vid="' + v.id + '"';
-  var linked = !!v.link && state.seguros.some(function(x){ return x.id === v.link; });
-  var linkSel = state.seguros.length ? '<label class="field"><span class="lbl">Sustituye a un seguro que necesitarías igualmente</span><span class="inp"><select' + base + ' data-vf="link" aria-label="Seguro que sustituye"><option value="">No, es un extra</option>' +
-    state.seguros.map(function(x){ return '<option value="' + esc(x.id) + '"' + (x.id === v.link ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></span></label>' : '';
+  var rsg = resolveSeg(v, state.seguros), linked = !!rsg;
+  var linkSel = state.seguros.length ? '<label class="field"><span class="lbl">Sustituye a un seguro que necesitarías igualmente</span><span class="inp"><select' + base + ' data-vf="link" aria-label="Seguro que sustituye"><option value="none"' + (linked ? '' : ' selected') + '>No, es un extra</option>' +
+    state.seguros.map(function(x){ return '<option value="' + esc(x.id) + '"' + (rsg && x.id === rsg.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></span></label>' : '';
   return '<div class="vrow" data-vrow="' + v.id + '">' +
     '<div class="vtop">' +
       '<input type="checkbox" class="vcb" aria-label="Incluir esta vinculación"' + (v.on ? ' checked' : '') + base + ' data-vf="on">' +
@@ -710,7 +723,7 @@ function offerHtml(o){
       '</div>' +
       '<div class="bsec">' +
         '<h4 class="bh">Vinculaciones</h4>' +
-        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías. Si es un seguro que necesitarías igualmente, indícalo y anota la prima completa del banco: se descuenta lo que pagarías fuera. Si el banco solo exige mantenerla unos años, indícalos: el coste cuenta solo esos años y la bonificación sigue todo el préstamo. Desmarca las que no vayas a contratar.</p>' +
+        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías. Si es un seguro que necesitarías igualmente, se detecta por el nombre (o elígelo en el desplegable) y debes anotar la prima completa del banco: así no se suma también el seguro externo. Si el banco solo exige mantenerla unos años, indícalos: el coste cuenta solo esos años y la bonificación sigue todo el préstamo. Desmarca las que no vayas a contratar.</p>' +
         '<div class="vlist" id="vl-' + id + '">' + vincListHtml(o) + '</div>' +
         '<div class="chips">' + chips + '</div>' +
       '</div>' +
@@ -826,8 +839,9 @@ function updateVincResults(){
       if(!d){ el.setAttribute('data-verdict', 'neutral'); label.textContent = ''; text.textContent = 'Indica el importe a financiar para ver el efecto.'; return; }
       var verdict = Math.abs(d.net) < 0.5 ? 'neutral' : (d.net > 0 ? 'good' : 'bad');
       el.setAttribute('data-verdict', verdict);
+      var zeroWarn = resolveSeg(v, state.seguros) && !(num(v.coste) > 0);
       label.textContent = verdict === 'good' ? 'Compensa' : (verdict === 'bad' ? 'No compensa' : 'Sin efecto');
-      text.textContent = (v.on ? '' : 'Si la activas: ') + 'ahorras ' + eur0(d.saving) + ' en intereses, cuesta ' + eur0(d.cost) + (num(v.anos) > 0 ? ' en ' + attr(v.anos) + ' años' : '') + ', neto ' + signed(d.net);
+      text.textContent = (v.on ? '' : 'Si la activas: ') + 'ahorras ' + eur0(d.saving) + ' en intereses, cuesta ' + eur0(d.cost) + (num(v.anos) > 0 ? ' en ' + attr(v.anos) + ' años' : '') + ', neto ' + signed(d.net) + (zeroWarn ? '. Es un seguro enlazado: anota su prima completa en el banco.' : '');
     });
   });
 }
@@ -1278,7 +1292,7 @@ $('offers').addEventListener('input', function(e){
   else if(vid){
     var v = o.vinc.filter(function(x){ return x.id === vid; })[0]; if(!v) return;
     var vf = t.getAttribute('data-vf');
-    if(vf === 'link'){ v.link = t.value || null; $('vl-' + oid).innerHTML = vincListHtml(o); }
+    if(vf === 'link'){ v.link = t.value || 'none'; $('vl-' + oid).innerHTML = vincListHtml(o); }
     else if(vf === 'on') v.on = t.checked;
     else if(vf === 'name') v.name = t.value;
     else v[vf] = num(t.value);
