@@ -371,6 +371,10 @@ function resolveSeg(v, seg){
     var key = normTxt(seg[q].name).replace(/^seguro (de |del |para )?/, '').trim();
     if(key.length >= 3 && vn.indexOf(key) >= 0) return seg[q];
   }
+  var groups = [['hogar', 'vivienda', 'casa', 'multirriesgo', 'continente'], ['vida', 'fallecimiento'], ['impago', 'desempleo'], ['salud', 'medico']];
+  function grp(txt){ for(var gi = 0; gi < groups.length; gi++) for(var wi = 0; wi < groups[gi].length; wi++) if(txt.indexOf(groups[gi][wi]) >= 0) return gi; return -1; }
+  var gv = grp(vn);
+  if(gv >= 0) for(q = 0; q < seg.length; q++) if(grp(normTxt(seg[q].name)) === gv) return seg[q];
   return null;
 }
 
