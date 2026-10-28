@@ -340,6 +340,7 @@ table.cmp td.warn{color:var(--bad); font-weight:500}
       <li>Dinero necesario al firmar: entrada, impuestos y gastos de la compra, más las comisiones y gastos de formalización de cada oferta.</li>
       <li>Para negociar: rebaja de TIN (y, en variables y mixtas, también del diferencial) que necesita cada oferta para igualar el total con seguros de la más barata.</li>
       <li>Amortizar o invertir: se compara, al final del plazo original, el dinero que te ahorras de cuota al amortizar con el que acumularías invirtiendo esas mismas aportaciones, a la rentabilidad que indiques.</li>
+      <li>Vinculaciones con duración limitada: el coste solo se suma durante los años indicados, y la bonificación se mantiene todo el préstamo. Si es un seguro enlazado, pasados esos años pasas a pagar su precio externo, que se suma a «Seguros necesarios».</li>
       <li>Es una herramienta de comparación. La FEIN y la oferta vinculante de cada banco son las que mandan.</li>
     </ul>
     <p><button type="button" class="link" id="resetExamples">Volver a los datos de ejemplo</button></p>
@@ -400,7 +401,7 @@ function annualFromFlows(net0, pay, n, extra){
   if(!(net0 > 0)) return NaN;
   function f(i){
     var d = 1 / (1 + i), df = 1, s = 0;
-    for(var t = 0; t < n; t++){ df *= d; s += (pay[t] + extra) * df; }
+    for(var t = 0; t < n; t++){ df *= d; s += (pay[t] + (typeof extra === 'number' ? extra : extra[t])) * df; }
     return net0 - s;
   }
   if(f(0) >= 0) return 0;
@@ -424,24 +425,29 @@ function evaluate(o, g){
   var noBonus = amortize(cap, phasesFor(o, euribor, 0).phases, n);
   var seg = g.seguros || [];
   function segOf(v){ if(!v.link) return null; for(var q = 0; q < seg.length; q++) if(seg[q].id === v.link) return seg[q]; return null; }
-  var vincAnnual = 0, extraAnnual = 0, covered = {};
+  function vm(v){ var a = num(v.anos); return a > 0 ? Math.min(n, Math.round(a * 12)) : n; }
+  var vincM = new Float64Array(n), extraM = new Float64Array(n), extM = new Float64Array(n);
+  var coveredMonths = {};
   for(var k = 0; k < o.vinc.length; k++){
     var vk = o.vinc[k];
     if(!vk.on) continue;
-    var sk = segOf(vk);
-    vincAnnual += num(vk.coste);
-    extraAnnual += num(vk.coste) - (sk ? num(sk.precio) : 0);
-    if(sk) covered[sk.id] = true;
+    var sk = segOf(vk), mv = vm(vk);
+    for(var tt = 0; tt < mv; tt++){
+      vincM[tt] += num(vk.coste) / 12;
+      extraM[tt] += (num(vk.coste) - (sk ? num(sk.precio) : 0)) / 12;
+    }
+    if(sk) coveredMonths[sk.id] = Math.max(coveredMonths[sk.id] || 0, mv);
   }
-  var vincTotal = vincAnnual * n / 12;
+  var vincTotal = 0, extraTotal = 0;
+  for(var u = 0; u < n; u++){ vincTotal += vincM[u]; extraTotal += extraM[u]; }
   var extTotal = 0, extItems = [];
   for(var q2 = 0; q2 < seg.length; q2++){
-    var cv = !!covered[seg[q2].id];
-    var cst = cv ? 0 : num(seg[q2].precio) * n / 12;
+    var cm0 = coveredMonths[seg[q2].id] || 0;
+    var cst = num(seg[q2].precio) * (n - cm0) / 12;
+    for(var t2 = cm0; t2 < n; t2++) extM[t2] += num(seg[q2].precio) / 12;
     extTotal += cst;
-    extItems.push({id: seg[q2].id, name: seg[q2].name, cost: cst, covered: cv});
+    extItems.push({id: seg[q2].id, name: seg[q2].name, cost: cst, covered: cm0 >= n, partial: cm0 > 0 && cm0 < n, coveredYears: cm0 / 12});
   }
-  var extAnnual = extTotal * 12 / n;
   var apertura = cap * num(o.apertura) / 100 + num(o.otros);
   var formal = 0;
   for(var key in o.g) formal += num(o.g[key]);
@@ -452,12 +458,12 @@ function evaluate(o, g){
     var i0 = amortize(cap, phasesFor(o, euribor, bo).phases, n).totalInt;
     var i1 = amortize(cap, phasesFor(o, euribor, bo + num(v.bonus)).phases, n).totalInt;
     var sv = segOf(v);
-    var saving = i0 - i1, cost = (num(v.coste) - (sv ? num(sv.precio) : 0)) * n / 12;
+    var saving = i0 - i1, cost = (num(v.coste) - (sv ? num(sv.precio) : 0)) * vm(v) / 12;
     return {id: v.id, saving: saving, cost: cost, net: saving - cost};
   });
   var cum = new Float64Array(n + 1);
   cum[0] = upfront;
-  for(var t = 0; t < n; t++) cum[t + 1] = cum[t] + sched.int[t] + vincAnnual / 12 + extAnnual / 12;
+  for(var t = 0; t < n; t++) cum[t + 1] = cum[t] + sched.int[t] + vincM[t] + extM[t];
   var ph = rt.phases;
   var cap0 = cap - (cap * num(o.apertura) / 100);
   return {
@@ -467,10 +473,10 @@ function evaluate(o, g){
     interest: sched.totalInt, vincTotal: vincTotal, aperturaTotal: apertura, formal: formal,
     upfront: upfront, costeTotal: costeTotal, totalPagar: cap + costeTotal,
     taePrestamo: annualFromFlows(cap0, sched.pay, n, 0),
-    taeReal: annualFromFlows(cap - upfront, sched.pay, n, extraAnnual / 12),
+    taeReal: annualFromFlows(cap - upfront, sched.pay, n, extraM),
     saved: noBonus.totalInt - sched.totalInt,
-    vincExtra: extraAnnual * n / 12, extTotal: extTotal, extItems: extItems, costeAll: costeTotal + extTotal,
-    vincNet: (noBonus.totalInt - sched.totalInt) - extraAnnual * n / 12,
+    vincExtra: extraTotal, extTotal: extTotal, extItems: extItems, costeAll: costeTotal + extTotal,
+    vincNet: (noBonus.totalInt - sched.totalInt) - extraTotal,
     vincDetail: vincDetail, cum: cum
   };
 }
@@ -589,7 +595,7 @@ function pct(n){ return isFinite(n) ? nfp.format(n) + NB + '%' : '—'; }
 function signed(n){ return (n >= 0 ? '+' : MINUS) + eur0(Math.abs(n)); }
 
 /* ---------- estado ---------- */
-function newVinc(name, bonus, coste, link){ return {id: nid('v'), name: name, bonus: bonus, coste: coste, on: true, link: link || null}; }
+function newVinc(name, bonus, coste, link){ return {id: nid('v'), name: name, bonus: bonus, coste: coste, on: true, link: link || null, anos: 0}; }
 function defaultCompra(){ return {tipo: 'nueva', iva: 10, ajd: 0.75, itp: 6, otros: 0}; }
 function defaultSeguros(){ return [{id: 'sg-hogar', name: 'Seguro de hogar', precio: 200}, {id: 'sg-vida', name: 'Seguro de vida', precio: 280}]; }
 function newOffer(slot, name){
@@ -623,7 +629,7 @@ function sanitize(s){
   (s.offers || []).slice(0, 8).forEach(function(o, i){
     var m = Object.assign(newOffer(i, 'Oferta'), o);
     m.g = Object.assign({}, GDEF, o.g || {});
-    m.vinc = (o.vinc || []).map(function(v){ var w = Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true, link: null}, v); if(w.link && !out.seguros.some(function(x){ return x.id === w.link; })) w.link = null; return w; });
+    m.vinc = (o.vinc || []).map(function(v){ var w = Object.assign({id: nid('v'), name: 'Vinculación', bonus: 0, coste: 0, on: true, link: null, anos: 0}, v); if(w.link && !out.seguros.some(function(x){ return x.id === w.link; })) w.link = null; return w; });
     m.slot = (Number.isInteger(o.slot) && o.slot >= 0 && o.slot < 8) ? o.slot : i;
     if(!TIPOS[m.tipo]) m.tipo = 'fija';
     out.offers.push(m);
@@ -670,6 +676,7 @@ function vincRowHtml(o, v){
     '<div class="grid2">' +
       '<label class="field"><span class="lbl">Baja el TIN en</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.bonus) + '"' + base + ' data-vf="bonus"><span class="unit">puntos</span></span></label>' +
       '<label class="field"><span class="lbl">' + (linked ? 'Prima anual en el banco' : 'Sobrecoste al año') + '</span><span class="inp"><input type="number" inputmode="decimal" step="any" value="' + attr(v.coste) + '"' + base + ' data-vf="coste"><span class="unit">€</span></span></label>' +
+      '<label class="field"><span class="lbl">Años que hay que mantenerla</span><span class="inp"><input type="number" inputmode="decimal" step="any" min="0" placeholder="Todo el plazo" value="' + (num(v.anos) > 0 ? attr(v.anos) : '') + '"' + base + ' data-vf="anos"><span class="unit">años</span></span></label>' +
     '</div>' +
     linkSel +
     '<div class="vr" id="vr-' + v.id + '" data-verdict="neutral"><span class="vr-ico" aria-hidden="true"></span><span class="vr-label"></span><span class="vr-text"></span></div>' +
@@ -703,7 +710,7 @@ function offerHtml(o){
       '</div>' +
       '<div class="bsec">' +
         '<h4 class="bh">Vinculaciones</h4>' +
-        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías. Si es un seguro que necesitarías igualmente, indícalo y anota la prima completa del banco: se descuenta lo que pagarías fuera. Desmarca las que no vayas a contratar.</p>' +
+        '<p class="hint">Para cada una, cuánto baja el TIN y cuánto te cuesta de más al año respecto a lo que ya pagarías. Si es un seguro que necesitarías igualmente, indícalo y anota la prima completa del banco: se descuenta lo que pagarías fuera. Si el banco solo exige mantenerla unos años, indícalos: el coste cuenta solo esos años y la bonificación sigue todo el préstamo. Desmarca las que no vayas a contratar.</p>' +
         '<div class="vlist" id="vl-' + id + '">' + vincListHtml(o) + '</div>' +
         '<div class="chips">' + chips + '</div>' +
       '</div>' +
@@ -820,7 +827,7 @@ function updateVincResults(){
       var verdict = Math.abs(d.net) < 0.5 ? 'neutral' : (d.net > 0 ? 'good' : 'bad');
       el.setAttribute('data-verdict', verdict);
       label.textContent = verdict === 'good' ? 'Compensa' : (verdict === 'bad' ? 'No compensa' : 'Sin efecto');
-      text.textContent = (v.on ? '' : 'Si la activas: ') + 'ahorras ' + eur0(d.saving) + ' en intereses, cuesta ' + eur0(d.cost) + ', neto ' + signed(d.net);
+      text.textContent = (v.on ? '' : 'Si la activas: ') + 'ahorras ' + eur0(d.saving) + ' en intereses, cuesta ' + eur0(d.cost) + (num(v.anos) > 0 ? ' en ' + attr(v.anos) + ' años' : '') + ', neto ' + signed(d.net);
     });
   });
 }
@@ -928,7 +935,7 @@ function renderTable(){
   if(sg.length){
     rows.push({g: 'Seguros necesarios'});
     sg.forEach(function(it, ix){
-      rows.push({l: it.name, t: function(r){ var x = r.extItems[ix]; return x.covered ? 'Incluido en vinculación' : eur0(x.cost); }});
+      rows.push({l: it.name, t: function(r){ var x = r.extItems[ix]; return x.covered ? 'Incluido en vinculación' : (x.partial ? 'Tras ' + nfp.format(x.coveredYears).replace(',00', '') + ' años: ' + eur0(x.cost) : eur0(x.cost)); }});
     });
     rows.push({l: 'Seguros fuera de la hipoteca', t: function(r){ return eur0(r.extTotal); }});
     rows.push({l: 'Balance neto menos seguros externos', t: function(r){ return signed(r.vincNet - r.extTotal); }});
